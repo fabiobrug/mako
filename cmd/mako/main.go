@@ -10,6 +10,7 @@ import (
 	"unsafe"
 
 	"github.com/creack/pty"
+	"github.com/fabiobrug/mako.git/internal/stream"
 )
 
 func main() {
@@ -20,6 +21,8 @@ func main() {
 
 	fmt.Printf("Mako starting with shell: %s\n", shell)
 
+	interceptor := stream.NewInterceptor(500)
+
 	cmd := exec.Command(shell)
 
 	ptmx, err := pty.Start(cmd)
@@ -27,7 +30,20 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to start PTY: %v\n", err)
 		os.Exit(1)
 	}
-	defer ptmx.Close()
+	defer func() {
+		ptmx.Close()
+
+		lines := interceptor.GetAllLines()
+		fmt.Printf("\nCaptured %d lines of output\n", len(lines))
+
+		if len(lines) > 0 {
+			fmt.Println("Last 5 lines captured:")
+			recent := interceptor.GetRecentLines(5)
+			for _, line := range recent {
+				fmt.Printf(" > %s\n", line)
+			}
+		}
+	}()
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGWINCH)
@@ -47,7 +63,8 @@ func main() {
 	defer Restore(os.Stdin.Fd(), oldState)
 
 	go func() { io.Copy(ptmx, os.Stdin) }()
-	io.Copy(os.Stdout, ptmx)
+
+	interceptor.Tee(os.Stdout, ptmx)
 
 	fmt.Println("\n Mako exiting...")
 }
