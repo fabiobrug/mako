@@ -6,14 +6,71 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 	"unsafe"
 
 	"github.com/creack/pty"
+	"github.com/fabiobrug/mako.git/internal/ai"
 	"github.com/fabiobrug/mako.git/internal/stream"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	godotenv.Load()
+
+	if len(os.Args) >= 3 && os.Args[1] == "ask" {
+		handleAskCommand(os.Args[2:])
+		return
+	}
+
+	runShellWrapper()
+}
+
+func handleAskCommand(args []string) {
+	userRequest := strings.Join(args, " ")
+	fmt.Printf("Mako is thinking about: %s\n", userRequest)
+
+	client, err := ai.NewGeminiClient()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Make sure GEMINI_API_KEY is set in  your environment.\n")
+		os.Exit(1)
+	}
+
+	context := ai.GetSystemContext([]string{})
+
+	command, err := client.GenerateCommand(userRequest, context)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating command: %v\n", err)
+	}
+
+	fmt.Printf("\nSuggested command:\n")
+	fmt.Printf("   %s\n\n", command)
+
+	fmt.Printf("Execute this command? [y/N]: ")
+	var response string
+	fmt.Scanln(&response)
+
+	response = strings.ToLower(strings.TrimSpace(response))
+	if response != "y" && response != "yes" {
+		fmt.Printf("Command not executed\n")
+		return
+	}
+
+	fmt.Println("Executing...")
+	cmd := exec.Command("bash", "-c", command)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Command failde: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func runShellWrapper() {
 	shell := os.Getenv("SHELL")
 	if shell == "" {
 		shell = "/bin/bash"
