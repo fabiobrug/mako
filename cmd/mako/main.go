@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/creack/pty"
@@ -162,7 +163,46 @@ func runShellWrapper() {
 		shell = "/bin/bash"
 	}
 
-	fmt.Printf("Mako starting with shell: %s\n", shell)
+	fmt.Printf(" Mako starting with shell: %s\n	", shell)
+	fmt.Println(`
+ ███        ███      ████        ███  ███     █████████    
+ ████      ████     ██████       ███ ███    ███     ███░   
+ ███ ██  ██ ███    ███  ███      ██████     ███     ███░   
+ ███  ████  ███   ██████████     ███ ███    ███     ███░   
+ ███   ██   ███  ███      ███    ███  ███   ███     ███░   
+ ███        ███ ███        ███   ███   ███   █████████░    
+ ░░░        ░░░ ░░░        ░░░   ░░░   ░░░    ░░░░░░░░░    
+    `)
+	fmt.Println(`
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢠⣾⣿⣏⠉⠉⠉⠉⠉⠉⢡⣶⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠻⢿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⡄⠀
+⠈⣿⣿⣿⣿⣦⣽⣦⡀⠀⠀⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⢧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⠀⠀
+⠀⠘⢿⣿⣿⣿⣿⣿⣿⣦⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⠇⠀⠀
+⠀⠀⠈⠻⣿⣿⣿⣿⡟⢿⠻⠛⠙⠉⠋⠛⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⣿⡟⠀⠀⠀
+⠀⠀⠀⠀⠈⠙⢿⡇⣠⣤⣶⣶⣾⡉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣰⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠾⢇⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⠃⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠱⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠤⢤⣀⣀⣀⣀⣀⣀⣠⣤⣤⣤⣬⣭⣿⣿⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⢿⣿⣿⣿⣿⣿⣶⣤⣄⣀⣀⣠⣴⣾⣿⣿⣿⣷⣤⣀⡀⠀⠀⠀⠀⠀⠀⣀⣀⣤⣾⣿⣿⣿⣿⡿⠿⠛⠛⠻⣿⣿⣿⣿⣇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣶⣤⣤⣘⡛⠿⢿⡿⠟⠛⠉⠁⠀⠀⠀⠀⠀⠈⠻⣿⣿⣿⣦⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⢿⣿⣿⣿⣿⣿⣶⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⡄⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⠿⠛⠉⠁⠀⠈⠉⠙⠛⠛⠻⠿⠿⠿⠿⠟⠛⠃⠀⠀⠀⠉⠉⠉⠛⠛⠛⠿⠿⠿⣶⣦⣄⡀⠀⠀⠀⠀⠀⠈⠙⠛⠂
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠿⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀`)
+
+	dbPath := filepath.Join(os.Getenv("HOME"), ".mako", "history.db")
+	db, err := database.NewDB(dbPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Could not open database: %v\n", err)
+	}
+	defer func() {
+		if db != nil {
+			syncBashHistory(db)
+			db.Close()
+		}
+	}()
+
+	workingDir, _ := os.Getwd()
+	_ = workingDir
 
 	interceptor := stream.NewInterceptor(500)
 
@@ -177,15 +217,7 @@ func runShellWrapper() {
 		ptmx.Close()
 
 		lines := interceptor.GetAllLines()
-		fmt.Printf("\nCaptured %d lines of output\n", len(lines))
-
-		if len(lines) > 0 {
-			fmt.Println("Last 5 lines captured:")
-			recent := interceptor.GetRecentLines(5)
-			for _, line := range recent {
-				fmt.Printf(" > %s\n", line)
-			}
-		}
+		fmt.Printf("\n Captured %d lines of output\n", len(lines))
 	}()
 
 	ch := make(chan os.Signal, 1)
@@ -210,6 +242,60 @@ func runShellWrapper() {
 	interceptor.Tee(os.Stdout, ptmx)
 
 	fmt.Println("\n Mako exiting...")
+}
+
+func syncBashHistory(db *database.DB) {
+	histFile := filepath.Join(os.Getenv("HOME"), ".bash_history")
+
+	data, err := os.ReadFile(histFile)
+	if err != nil {
+		return
+	}
+
+	lines := strings.Split(string(data), "\n")
+
+	recent, err := db.GetRecentCommands(20)
+	if err != nil {
+		return
+	}
+
+	existing := make(map[string]bool)
+	for _, cmd := range recent {
+		existing[cmd.Command] = true
+	}
+
+	workingDir, _ := os.Getwd()
+
+	startIdx := len(lines) - 10
+	if startIdx < 0 {
+		startIdx = 0
+	}
+
+	for i := startIdx; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+
+		if existing[line] {
+			continue
+		}
+
+		if line == "exit" || line == "clear" || line == "history" {
+			continue
+		}
+
+		cmd := database.Command{
+			Command:    line,
+			Timestamp:  time.Now(),
+			ExitCode:   0,
+			Duration:   0,
+			WorkingDir: workingDir,
+		}
+
+		db.SaveCommand(cmd)
+		existing[line] = true
+	}
 }
 
 func MakeRaw(fd uintptr) (*syscall.Termios, error) {
