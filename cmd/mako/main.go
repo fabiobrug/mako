@@ -50,6 +50,17 @@ func handleHistoryCommand(args []string) {
 	}
 	defer db.Close()
 
+	if len(args) > 0 && args[0] == "semantic" {
+		if len(args) < 2 {
+			fmt.Println("Usage: mako history semantic <query>")
+			fmt.Println("Example: mako history semantic 'compress video'")
+			return
+		}
+
+		handleSemanticSearch(db, args[1:])
+		return
+	}
+
 	if len(args) == 0 {
 		commands, err := db.GetRecentCommands(20)
 		if err != nil {
@@ -90,6 +101,47 @@ func handleHistoryCommand(args []string) {
 				cmd.Timestamp.Format("2006-01-02 15:04:05"),
 				cmd.Command)
 		}
+	}
+}
+
+func handleSemanticSearch(db *database.DB, args []string) {
+	query := strings.Join(args, " ")
+
+	fmt.Printf(" Semantic search for: '%s'\n", query)
+	fmt.Println(" Generating embedding...")
+
+	embedService, err := ai.NewEmbeddingService()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	queryVec, err := embedService.Embed(query)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating embedding: %v\n", err)
+		os.Exit(1)
+	}
+
+	queryBytes := ai.VectorToBytes(queryVec)
+
+	commands, err := db.SearchCommandsSemantic(queryBytes, 10, 0.5)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Search error: %v\n", err)
+		os.Exit(1)
+	}
+
+	if len(commands) == 0 {
+		fmt.Printf("\n No commands found with semantic similarity to '%s'\n", query)
+		fmt.Println(" Tip: Try running more commands first, or use regular search:")
+		fmt.Printf("   mako history %s\n", query)
+		return
+	}
+
+	fmt.Printf("\n Found %d semantically similar commands:\n", len(commands))
+	for _, cmd := range commands {
+		fmt.Printf("\n[%s] %s\n",
+			cmd.Timestamp.Format("2006-01-02 15:04:05"),
+			cmd.Command)
 	}
 }
 
@@ -266,6 +318,8 @@ func syncBashHistory(db *database.DB) {
 
 	workingDir, _ := os.Getwd()
 
+	embedService, _ := ai.NewEmbeddingService()
+
 	startIdx := len(lines) - 10
 	if startIdx < 0 {
 		startIdx = 0
@@ -285,12 +339,21 @@ func syncBashHistory(db *database.DB) {
 			continue
 		}
 
+		var embeddingBytes []byte
+		if embedService != nil {
+			vec, err := embedService.Embed(line)
+			if err == nil {
+				embeddingBytes = ai.VectorToBytes(vec)
+			}
+		}
+
 		cmd := database.Command{
 			Command:    line,
 			Timestamp:  time.Now(),
 			ExitCode:   0,
 			Duration:   0,
 			WorkingDir: workingDir,
+			Embedding:  embeddingBytes,
 		}
 
 		db.SaveCommand(cmd)

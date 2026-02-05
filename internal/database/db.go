@@ -1,8 +1,11 @@
 package database
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -20,6 +23,7 @@ type Command struct {
 	Duration      int64
 	WorkingDir    string
 	OutputPreview string
+	Embedding     []byte
 }
 
 func NewDB(dbPath string) (*DB, error) {
@@ -47,7 +51,8 @@ func (db *DB) initTables() error {
 		exit_code INTEGER DEFAULT 0,
 		duration_ms INTEGER DEFAULT 0,
 		working_dir TEXT,
-		output_preview TEXT
+		output_preview TEXT,
+		embedding BLOB
 	);
 
 	CREATE VIRTUAL TABLE IF NOT EXISTS commands_fts USING fts5(
@@ -74,6 +79,7 @@ func (db *DB) initTables() error {
 	
 	CREATE INDEX IF NOT EXISTS idx_timestamp ON commands(timestamp DESC);
 	CREATE INDEX IF NOT EXISTS idx_working_dir ON commands(working_dir);
+	CREATE INDEX IF NOT EXISTS idx_has_embedding ON commands(embedding) WHERE embedding IS NOT NULL;
 	`
 
 	_, err := db.conn.Exec(schema)
@@ -82,8 +88,8 @@ func (db *DB) initTables() error {
 
 func (db *DB) SaveCommand(cmd Command) error {
 	query := `
-		INSERT INTO commands (command, timestamp, exit_code, duration_ms, working_dir, output_preview)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO commands (command, timestamp, exit_code, duration_ms, working_dir, output_preview, embedding)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 
 	_, err := db.conn.Exec(
@@ -94,6 +100,7 @@ func (db *DB) SaveCommand(cmd Command) error {
 		cmd.Duration,
 		cmd.WorkingDir,
 		cmd.OutputPreview,
+		cmd.Embedding,
 	)
 
 	return err
@@ -242,6 +249,104 @@ func (db *DB) GetStats() (map[string]interface{}, error) {
 	}
 
 	return stats, nil
+}
+
+func (db *DB) SearchCommandsSemantic(queryEmbedding []byte, limit int, threshold float32) ([]Command, error) {
+	query := `
+		SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview, embedding
+		FROM commands
+		WHERE embedding IS NOT NULL
+		ORDER BY timestamp DESC
+		LIMIT 100
+	`
+
+	rows, err := db.conn.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	type scoredCommand struct {
+		cmd   Command
+		score float32
+	}
+
+	var candidates []scoredCommand
+
+	for rows.Next() {
+		var cmd Command
+		var embeddingBytes []byte
+
+		err := rows.Scan(
+			&cmd.ID,
+			&cmd.Command,
+			&cmd.Timestamp,
+			&cmd.ExitCode,
+			&cmd.Duration,
+			&cmd.WorkingDir,
+			&cmd.OutputPreview,
+			&embeddingBytes,
+		)
+		if err != nil {
+			continue
+		}
+
+		similarity := calculateSimilarity(queryEmbedding, embeddingBytes)
+
+		if similarity >= threshold {
+			candidates = append(candidates, scoredCommand{
+				cmd:   cmd,
+				score: similarity,
+			})
+		}
+	}
+
+	for i := 0; i < len(candidates); i++ {
+		for j := i + 1; j < len(candidates); j++ {
+			if candidates[j].score > candidates[i].score {
+				candidates[i], candidates[j] = candidates[j], candidates[i]
+			}
+		}
+	}
+
+	var results []Command
+	for i := 0; i < len(candidates) && i < limit; i++ {
+		results = append(results, candidates[i].cmd)
+	}
+
+	return results, nil
+}
+
+func calculateSimilarity(a, b []byte) float32 {
+	if len(a) == 0 || len(b) == 0 {
+		return 0
+	}
+
+	vecA := make([]float32, len(a)/4)
+	vecB := make([]float32, len(b)/4)
+
+	bufA := bytes.NewReader(a)
+	bufB := bytes.NewReader(b)
+
+	binary.Read(bufA, binary.LittleEndian, &vecA)
+	binary.Read(bufB, binary.LittleEndian, &vecB)
+
+	var dotProduct, normA, normB float64
+
+	for i := range vecA {
+		if i >= len(vecB) {
+			break
+		}
+		dotProduct += float64(vecA[i]) * float64(vecB[i])
+		normA += float64(vecA[i]) * float64(vecA[i])
+		normB += float64(vecB[i]) * float64(vecB[i])
+	}
+
+	if normA == 0 || normB == 0 {
+		return 0
+	}
+
+	return float32(dotProduct / (math.Sqrt(normA) * math.Sqrt(normB)))
 }
 
 func (db *DB) Close() error {
