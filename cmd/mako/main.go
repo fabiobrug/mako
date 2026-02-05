@@ -6,25 +6,111 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"unsafe"
 
 	"github.com/creack/pty"
 	"github.com/fabiobrug/mako.git/internal/ai"
+	"github.com/fabiobrug/mako.git/internal/database"
 	"github.com/fabiobrug/mako.git/internal/stream"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	godotenv.Load()
+	_ = godotenv.Load()
 
-	if len(os.Args) >= 3 && os.Args[1] == "ask" {
-		handleAskCommand(os.Args[2:])
-		return
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "ask":
+			if len(os.Args) >= 3 {
+				handleAskCommand(os.Args[2:])
+				return
+			}
+		case "history":
+			handleHistoryCommand(os.Args[2:])
+			return
+		case "stats":
+			handleStatsCommand()
+			return
+		}
 	}
 
 	runShellWrapper()
+}
+
+func handleHistoryCommand(args []string) {
+	dbPath := filepath.Join(os.Getenv("HOME"), ".mako", "history.db")
+	db, err := database.NewDB(dbPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to open database: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	if len(args) == 0 {
+		commands, err := db.GetRecentCommands(20)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v", err)
+			os.Exit(1)
+		}
+
+		if len(commands) == 0 {
+			fmt.Println("No command history yet. Run some commands in Mako first!")
+			return
+		}
+
+		fmt.Println("Recent command history:")
+		for _, cmd := range commands {
+			fmt.Printf("\n[%s] %s\n",
+				cmd.Timestamp.Format("2006-01-02 15:04:05"),
+				cmd.Command)
+			if cmd.ExitCode != 0 {
+				fmt.Printf(" Exit code: %d\n", cmd.ExitCode)
+			}
+		}
+	} else {
+		query := strings.Join(args, " ")
+		commands, err := db.SearchCommands(query, 10)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Search error: %v\n", err)
+			os.Exit(1)
+		}
+
+		if len(commands) == 0 {
+			fmt.Printf("No commands found matching: %s\n", query)
+			return
+		}
+
+		fmt.Printf("Found %d commands matching: '%s':\n", len(commands), query)
+		for _, cmd := range commands {
+			fmt.Printf("\n[%s] %s\n",
+				cmd.Timestamp.Format("2006-01-02 15:04:05"),
+				cmd.Command)
+		}
+	}
+}
+
+func handleStatsCommand() {
+	dbPath := filepath.Join(os.Getenv("HOME"), ".mako", "history.db")
+	db, err := database.NewDB(dbPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to open database: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	stats, err := db.GetStats()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting stats: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Mako Statistics:")
+	fmt.Printf("  Total commands: %d\n", stats["total_commands"])
+	fmt.Printf("  Commands today: %d\n", stats["commands_today"])
+	fmt.Printf("  Avg duration: %.0fms\n", stats["avg_duration_ms"])
 }
 
 func handleAskCommand(args []string) {
