@@ -28,12 +28,20 @@ func main() {
 			showHelp()
 			return
 		case "version", "-v", "--version":
-			fmt.Println(" Mako v0.1.0 - AI-Native Shell Orchestrator")
+			cyan := "\033[38;2;0;209;255m"
+			lightBlue := "\033[38;2;93;173;226m"
+			dimBlue := "\033[38;2;120;150;180m"
+			reset := "\033[0m"
+			fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v0.1.1 %s%s\n", lightBlue, cyan, reset)
+			fmt.Printf("%s", dimBlue)
 			return
 		case "ask", "history", "stats":
-			fmt.Printf(" '%s' command should be used inside Mako shell\n\n", os.Args[1])
-			fmt.Println("Start Mako with: ./mako")
-			fmt.Printf("Then inside Mako: mako %s <args>\n", os.Args[1])
+			lightBlue := "\033[38;2;93;173;226m"
+			cyan := "\033[38;2;0;209;255m"
+			reset := "\033[0m"
+			fmt.Printf("\n%sℹ  '%s' command must be used inside Mako shell%s\n\n", lightBlue, os.Args[1], reset)
+			fmt.Printf("%sStart Mako with:%s %s./mako%s\n", lightBlue, reset, cyan, reset)
+			fmt.Printf("%sThen inside Mako:%s %smako %s <args>%s\n\n", lightBlue, reset, cyan, os.Args[1], reset)
 			return
 		}
 	}
@@ -42,40 +50,78 @@ func main() {
 }
 
 func showHelp() {
-	help := `
- Mako - AI-Native Shell Orchestrator
+	cyan := "\033[38;2;0;209;255m"
+	lightBlue := "\033[38;2;93;173;226m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
 
-USAGE:
-    mako                                    Start Mako shell wrapper
-    mako ask <question>                     Generate shell command from natural language
-    mako history                            Show recent command history
-    mako history <keyword>                  Search history by keyword
-    mako history semantic <query>           Search history by meaning
-    mako stats                              Show usage statistics
-    mako help                               Show this help message
-    mako version                            Show version
+	help := fmt.Sprintf(`
+%s╭─ Mako%s - AI-Native Shell Orchestrator
+%s│%s
+%s│%s %sUSAGE:%s
+%s│%s   %smako%s                                Start Mako shell wrapper
+%s│%s   %smako ask <question>%s                 Generate shell command from natural language
+%s│%s   %smako history%s                        Show recent command history
+%s│%s   %smako history <keyword>%s              Search history by keyword
+%s│%s   %smako history semantic <query>%s       Search history by meaning
+%s│%s   %smako stats%s                          Show usage statistics
+%s│%s   %smako help%s                           Show this help message
+%s│%s   %smako version%s                        Show version
+%s│%s
+%s│%s %sEXAMPLES:%s
+%s│%s   %smako ask "find all files larger than 100MB"%s
+%s│%s   %smako history semantic "compress video"%s
+%s│%s   %smako history grep%s
+%s│%s
+%s│%s %sINSIDE MAKO SHELL:%s
+%s│%s   Type commands normally - they're automatically saved with embeddings
+%s│%s   Use Ctrl+D or 'exit' to leave Mako
+%s│%s
+%s│%s %sFEATURES:%s
+%s│%s   ▸ AI-powered command generation
+%s│%s   ▸ Semantic command search
+%s│%s   ▸ Automatic command history
+%s│%s   ▸ Full-text search
+%s│%s   ▸ Beautiful custom prompt
+%s│%s
+%s│%s %sENVIRONMENT:%s
+%s│%s   %sGEMINI_API_KEY%s    Your Gemini API key (required for AI features)
+%s│%s
+	%s╰─%s %shttps://github.com/fabiobrug/mako%s
 
-EXAMPLES:
-    mako ask "find all files larger than 100MB"
-    mako history semantic "compress video"
-    mako history grep
+`, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, dimBlue, reset,
+		lightBlue, reset, dimBlue, reset,
+		lightBlue, reset, dimBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset, dimBlue, reset)
 
-INSIDE MAKO SHELL:
-    Type commands normally - they're automatically saved with embeddings
-    Use Ctrl+D or 'exit' to leave Mako
-
-FEATURES:
-     AI-powered command generation
-     Semantic command search
-     Automatic command history
-     Full-text search
-     Beautiful custom prompt
-
-ENVIRONMENT:
-    GEMINI_API_KEY    Your Gemini API key (required for AI features)
-
-For more info: https://github.com/fabiobrug/mako
-`
 	fmt.Println(help)
 }
 
@@ -84,15 +130,12 @@ func runShellWrapper() {
 	if shell == "" {
 		shell = "/bin/bash"
 	}
-
-	biolumeCyan := "\033[38;2;0;209;255m"
-	deepAtlantic := "\033[38;2;93;173;226m"
-	dorsalGrey := "\033[38;2;149;165;166m"
+	cyan := "\033[38;2;0;209;255m"
+	lightBlue := "\033[38;2;93;173;226m"
+	dimBlue := "\033[38;2;120;150;180m"
 	reset := "\033[0m"
-
-	fmt.Printf("%s Mako starting with shell: %s%s\n", biolumeCyan, shell, reset)
-
-	fmt.Printf("%s", dorsalGrey)
+	fmt.Printf("\n%s▸ Starting Mako%s%s\n", lightBlue, cyan, reset)
+	fmt.Printf("%s", dimBlue)
 	fmt.Println(`
  ███        ███      ████        ███  ███     █████████    
  ████      ████     ██████       ███ ███    ███     ███░   
@@ -103,23 +146,22 @@ func runShellWrapper() {
  ░░░        ░░░ ░░░        ░░░   ░░░   ░░░    ░░░░░░░░░    
     `)
 	fmt.Print(reset)
-
-	fmt.Printf("%s", deepAtlantic)
+	fmt.Printf("%s", lightBlue)
 	fmt.Println(`
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⢠⣾⣿⣏⠉⠉⠉⠉⠉⠉⢡⣶⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠻⢿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⡄⠀
-⠈⣿⣿⣿⣿⣦⣽⣦⡀⠀⠀⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⢧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⠀⠀
-⠀⠘⢿⣿⣿⣿⣿⣿⣿⣦⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⠇⠀⠀
-⠀⠀⠈⠻⣿⣿⣿⣿⡟⢿⠻⠛⠙⠉⠋⠛⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⣿⡟⠀⠀⠀
-⠀⠀⠀⠀⠈⠙⢿⡇⣠⣤⣶⣶⣾⡉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣰⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠾⢇⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⠃⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠱⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠤⢤⣀⣀⣀⣀⣀⣀⣠⣤⣤⣤⣬⣭⣿⣿⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⢿⣿⣿⣿⣿⣿⣶⣤⣄⣀⣀⣠⣴⣾⣿⣿⣿⣷⣤⣀⡀⠀⠀⠀⠀⠀⠀⣀⣀⣤⣾⣿⣿⣿⣿⡿⠿⠛⠛⠻⣿⣿⣿⣿⣇⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣶⣤⣤⣘⡛⠿⢿⡿⠟⠛⠉⠁⠀⠀⠀⠀⠀⠈⠻⣿⣿⣿⣦⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⢿⣿⣿⣿⣿⣿⣶⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⡄⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⠿⠛⠉⠁⠀⠈⠉⠙⠛⠛⠻⠿⠿⠿⠿⠟⠛⠃⠀⠀⠀⠉⠉⠉⠛⠛⠛⠿⠿⠿⣶⣦⣄⡀⠀⠀⠀⠀⠀⠈⠙⠛⠂
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠿⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀`)
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⡀⣀⢀⣀⣀⣀⣀⣀⣀⣀⣤⣤⣤⠤⠤⠤⠤⠤⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣼⣿⣿⣿⣿⢿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢰⣿⣿⣿⣿⡉⠉⠉⠉⠉⠉⠉⠉⠉⠉⣾⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠻⠻⡿⢿⣿⣿⣇⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣶⣶⠀⠀
+⠈⢹⣿⣿⣿⣿⣿⣦⣼⣷⣦⣀⠀⠀⠀⠈⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠘⠛⢧⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣼⣿⣿⠀⠀⠀
+⠀⠀⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣤⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣰⣿⣿⣿⡿⠇⠀⠀⠀
+⠀⠀⠀⠈⠘⠿⣿⣿⣿⣿⣿⣿⠛⢿⠛⠟⠛⠋⠋⠉⠋⠙⠛⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠈⠉⠻⡿⡇⢀⣤⣤⣶⣶⣶⣶⣏⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣤⣆⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠶⠿⣄⠀⠀⠀⠀⠀⠀⠀⢤⣾⣿⣿⣿⣿⣿⠙⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⢾⡿⣿⣿⣿⣿⣿⣿⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠢⠤⢤⣀⣀⣀⣀⣀⣀⣀⣀⣀⣠⣤⣤⣤⣤⣤⣭⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠛⠻⡿⣿⣿⣿⣿⣿⣿⣷⣶⣤⣤⣄⣀⣀⣀⣠⣤⣶⣾⣿⣿⣿⣿⣿⣶⣤⣄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣠⣤⣶⣿⣿⣿⣿⣿⣿⢿⠟⠿⠛⠛⠛⠙⠿⣿⣿⣿⣿⣿⣾⡀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠙⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣆⣀⣀⣀⣿⠿⢿⣿⣿⣿⡿⠿⠟⠟⠛⠋⠈⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⣿⣿⣿⣷⣆⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣷⣶⣦⣬⣭⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⢿⢿⣿⣿⣀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣿⣿⣿⣿⣿⡏⠿⠙⠃⠋⠀⠀⠙⠛⠘⠟⠿⠻⠟⢿⠿⡿⠿⡿⢽⠿⡿⠻⠷⠆⠀⠁⠉⠀⠘⠋⠛⠘⠛⠿⠻⠿⠿⠿⣿⢶⣶⣤⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠋⠻⠻⠦⠤
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⡿⠿⠟⠛⠁⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠙⠛⠓⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀`)
 	fmt.Print(reset)
 	dbPath := filepath.Join(os.Getenv("HOME"), ".mako", "history.db")
 	db, err := database.NewDB(dbPath)
@@ -132,17 +174,14 @@ func runShellWrapper() {
 			db.Close()
 		}
 	}()
-
 	interceptor := stream.NewInterceptor(500)
 	if db != nil {
 		interceptor.SetDatabase(db)
 	}
-
+	fmt.Printf("\n%s▸ Mako shell ready%s\n", lightBlue, reset)
 	makoRcPath := createMakoRc()
 	defer os.Remove(makoRcPath)
-
 	cmd := exec.Command(shell, "--rcfile", makoRcPath, "-i")
-
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start PTY: %v\n", err)
@@ -150,10 +189,10 @@ func runShellWrapper() {
 	}
 	defer func() {
 		ptmx.Close()
-		lines := interceptor.GetAllLines()
-		fmt.Printf("\n Captured %d lines of output\n", len(lines))
+		// Clean exit - clear the line and print exit message
+		fmt.Print("\r\033[K") // Clear current line
+		fmt.Printf("\n%s▸ Mako session ended%s\n", lightBlue, reset)
 	}()
-
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGWINCH)
 	go func() {
@@ -164,18 +203,14 @@ func runShellWrapper() {
 		}
 	}()
 	ch <- syscall.SIGWINCH
-
 	oldState, err := MakeRaw(os.Stdin.Fd())
 	if err != nil {
 		panic(err)
 	}
 	defer Restore(os.Stdin.Fd(), oldState)
-
 	go func() { io.Copy(ptmx, os.Stdin) }()
-
 	interceptor.Tee(os.Stdout, ptmx)
-
-	fmt.Println("\n Mako exiting...")
+	// Exit message moved to defer block above
 }
 
 func createMakoRc() string {
@@ -203,11 +238,9 @@ mako() {
     echo "<<<MAKO_EXECUTE>>>"
 }
 
-# Shark-themed PS1
-PS1='\[\033[1;94m\]\u\[\033[0;90m\]@\[\033[0;96m\]\h\[\033[0;37m\]:\[\033[1;94m\]\w\[\033[0;90m\]=> \[\033[0m\]'
+# PS1
+PS1='\[\033[0;36m\]\w\[\033[1;37m\] ❯ \[\033[0m\]'
 
-echo ""
-echo " Mako shell active - type 'mako help' for commands"
 echo ""
 `, homeDir, homeDir, cmdFile)
 

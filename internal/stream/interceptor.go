@@ -44,56 +44,70 @@ func (i *Interceptor) Tee(dst io.Writer, src io.Reader) error {
 		if n > 0 {
 			data := buf[:n]
 
-			// Always pass through to screen first
-			if _, writeErr := dst.Write(data); writeErr != nil {
-				return writeErr
+			// Check if this chunk contains the marker BEFORE writing to dst
+			dataStr := string(data)
+			if strings.Contains(dataStr, "<<<MAKO_EXECUTE>>>") {
+				// Don't write the marker to output
+				// Split on marker and only write the part before it
+				parts := strings.Split(dataStr, "<<<MAKO_EXECUTE>>>")
+				if len(parts) > 0 && parts[0] != "" {
+					dst.Write([]byte(parts[0]))
+				}
+
+				// Clear the current line
+				dst.Write([]byte("\r\033[K"))
+
+				// Read and execute command
+				if cmdBytes, errRead := os.ReadFile(cmdFile); errRead == nil {
+					actualCommand := strings.TrimSpace(string(cmdBytes))
+
+					shouldIntercept, output, cmdErr := shell.InterceptCommand(actualCommand, i.db)
+					if shouldIntercept {
+						if cmdErr != nil {
+							errorMsg := fmt.Sprintf("Error: %v\r\n", cmdErr)
+							dst.Write([]byte(errorMsg))
+						} else if output != "" {
+							// Ensure output has proper line endings
+							output = strings.ReplaceAll(output, "\n", "\r\n")
+							if !strings.HasSuffix(output, "\r\n") {
+								output += "\r\n"
+							}
+							dst.Write([]byte(output))
+						}
+					}
+					os.Remove(cmdFile)
+				}
+
+				// Write any remaining data after the marker
+				if len(parts) > 1 {
+					remaining := strings.Join(parts[1:], "")
+					if remaining != "" {
+						dst.Write([]byte(remaining))
+					}
+				}
+
+				// Skip the normal line buffering for this chunk
+				continue
 			}
 
-			// Process for buffer and command detection
+			// Normal path: write to destination
+			dst.Write(data)
+
+			// Buffer for line detection
 			lineBuffer.Write(data)
 			fullData := lineBuffer.Bytes()
 			lastNewline := bytes.LastIndexByte(fullData, '\n')
 
 			if lastNewline >= 0 {
 				lines := bytes.Split(fullData[:lastNewline+1], []byte{'\n'})
-				for _, line := range lines {
-					if len(line) == 0 {
-						continue
-					}
 
+				for _, line := range lines {
 					lineStr := string(line)
 					cleanLine := i.stripANSI(lineStr)
 					cleanLine = strings.TrimSpace(cleanLine)
 
 					if len(cleanLine) > 0 {
 						i.buffer.Write(cleanLine)
-
-						// Check for execution marker
-						if strings.Contains(cleanLine, "<<<MAKO_EXECUTE>>>") {
-							// Read the command from file
-							if cmdBytes, err := os.ReadFile(cmdFile); err == nil {
-								actualCommand := strings.TrimSpace(string(cmdBytes))
-
-								shouldIntercept, output, cmdErr := shell.InterceptCommand(actualCommand, i.db)
-								if shouldIntercept {
-									// Clear the marker line (move up one line, then clear it)
-									dst.Write([]byte("\033[1A\r\033[K"))
-
-									if cmdErr != nil {
-										errorMsg := fmt.Sprintf("Error: %v\n", cmdErr)
-										errorMsg = strings.ReplaceAll(errorMsg, "\n", "\r\n")
-										dst.Write([]byte(errorMsg))
-									} else if output != "" {
-										// Replace \n with \r\n for proper terminal output
-										output = strings.ReplaceAll(output, "\n", "\r\n")
-										dst.Write([]byte(output))
-									}
-								}
-
-								// Clean up
-								os.Remove(cmdFile)
-							}
-						}
 					}
 				}
 
@@ -106,9 +120,9 @@ func (i *Interceptor) Tee(dst io.Writer, src io.Reader) error {
 
 		if err != nil {
 			if err == io.EOF {
-				remaining := lineBuffer.String()
+				remaining := lineBuffer.Bytes()
 				if len(remaining) > 0 {
-					cleanLine := i.stripANSI(remaining)
+					cleanLine := i.stripANSI(string(remaining))
 					cleanLine = strings.TrimSpace(cleanLine)
 					if len(cleanLine) > 0 {
 						i.buffer.Write(cleanLine)

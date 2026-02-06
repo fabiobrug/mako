@@ -38,7 +38,24 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 			return true, getHelpText(), nil
 
 		case "v", "version":
-			return true, fmt.Sprintf("v0.1.0\n"), nil
+			return true, fmt.Sprintf("v0.1.1\n"), nil
+
+		case "draw":
+			return true, fmt.Sprintln(`
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⡀⣀⢀⣀⣀⣀⣀⣀⣀⣀⣤⣤⣤⠤⠤⠤⠤⠤⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣼⣿⣿⣿⣿⢿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢰⣿⣿⣿⣿⡉⠉⠉⠉⠉⠉⠉⠉⠉⠉⣾⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠻⠻⡿⢿⣿⣿⣇⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣶⣶⠀⠀
+⠈⢹⣿⣿⣿⣿⣿⣦⣼⣷⣦⣀⠀⠀⠀⠈⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠘⠛⢧⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣼⣿⣿⠀⠀⠀
+⠀⠀⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣤⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣰⣿⣿⣿⡿⠇⠀⠀⠀
+⠀⠀⠀⠈⠘⠿⣿⣿⣿⣿⣿⣿⠛⢿⠛⠟⠛⠋⠋⠉⠋⠙⠛⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠈⠉⠻⡿⡇⢀⣤⣤⣶⣶⣶⣶⣏⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣤⣆⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠶⠿⣄⠀⠀⠀⠀⠀⠀⠀⢤⣾⣿⣿⣿⣿⣿⠙⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⢾⡿⣿⣿⣿⣿⣿⣿⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠢⠤⢤⣀⣀⣀⣀⣀⣀⣀⣀⣀⣠⣤⣤⣤⣤⣤⣭⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠛⠻⡿⣿⣿⣿⣿⣿⣿⣷⣶⣤⣤⣄⣀⣀⣀⣠⣤⣶⣾⣿⣿⣿⣿⣿⣶⣤⣄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣠⣤⣶⣿⣿⣿⣿⣿⣿⢿⠟⠿⠛⠛⠛⠙⠿⣿⣿⣿⣿⣿⣾⡀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠙⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣆⣀⣀⣀⣿⠿⢿⣿⣿⣿⡿⠿⠟⠟⠛⠋⠈⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⣿⣿⣿⣷⣆⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣷⣶⣦⣬⣭⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⢿⢿⣿⣿⣀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣿⣿⣿⣿⣿⡏⠿⠙⠃⠋⠀⠀⠙⠛⠘⠟⠿⠻⠟⢿⠿⡿⠿⡿⢽⠿⡿⠻⠷⠆⠀⠁⠉⠀⠘⠋⠛⠘⠛⠿⠻⠿⠿⠿⣿⢶⣶⣤⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠋⠻⠻⠦⠤
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⡿⠿⠟⠛⠁⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠙⠛⠓⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀`), nil
 
 		default:
 			return true, fmt.Sprintf("Unknown mako command: %s\n", parts[1]), nil
@@ -60,21 +77,30 @@ func handleAsk(query string) (string, error) {
 		return "", err
 	}
 
-	output := fmt.Sprintf("\n\n Suggested command:\n   %s\n\n", command)
-	output += "  Note: Commands generated inside Mako are shown but not auto-executed.\n"
-	output += "Copy and paste the command above to run it.\n\n"
+	cyan := "\033[38;2;0;209;255m"
+	lightBlue := "\033[38;2;93;173;226m"
+	reset := "\033[0m"
+
+	output := fmt.Sprintf("\n%s╭─ Generated Command%s\n", lightBlue, reset)
+	output += fmt.Sprintf("%s│%s  %s%s%s\n", lightBlue, reset, cyan, command, reset)
+	output += fmt.Sprintf("%s╰─%s\n", lightBlue, reset)
+	output += fmt.Sprintf("\n%sℹ  Copy and paste the command above to execute it%s\n\n", lightBlue, reset)
 
 	return output, nil
 }
 
 func handleHistory(args []string, db *database.DB) (string, error) {
+	lightBlue := "\033[38;2;93;173;226m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
+
 	if db == nil {
-		return "\nDatabase not available\n\n", nil
+		return fmt.Sprintf("\n%s✗ Database not available%s\n\n", dimBlue, reset), nil
 	}
 
 	if len(args) > 0 && args[0] == "semantic" {
 		if len(args) < 2 {
-			return "\nUsage: mako history semantic <query>\n\n", nil
+			return fmt.Sprintf("\n%sUsage:%s mako history semantic <query>\n\n", lightBlue, reset), nil
 		}
 		return handleSemanticHistory(strings.Join(args[1:], " "), db)
 	}
@@ -86,17 +112,18 @@ func handleHistory(args []string, db *database.DB) (string, error) {
 		}
 
 		if len(commands) == 0 {
-			return "\nNo command history yet.\n\n", nil
+			return fmt.Sprintf("\n%sNo command history yet%s\n\n", dimBlue, reset), nil
 		}
 
 		var output strings.Builder
-		output.WriteString("\n\n Recent commands:\n\n")
+		output.WriteString(fmt.Sprintf("\n%s╭─ Recent Commands%s\n", lightBlue, reset))
 		for _, cmd := range commands {
-			output.WriteString(fmt.Sprintf("[%s] %s\n",
-				cmd.Timestamp.Format("15:04:05"),
+			output.WriteString(fmt.Sprintf("%s│%s %s[%s]%s %s\n",
+				lightBlue, reset,
+				dimBlue, cmd.Timestamp.Format("15:04:05"), reset,
 				cmd.Command))
 		}
-		output.WriteString("\n")
+		output.WriteString(fmt.Sprintf("%s╰─%s\n\n", lightBlue, reset))
 
 		return output.String(), nil
 	}
@@ -108,22 +135,27 @@ func handleHistory(args []string, db *database.DB) (string, error) {
 	}
 
 	if len(commands) == 0 {
-		return fmt.Sprintf("\nNo commands found matching: %s\n\n", query), nil
+		return fmt.Sprintf("\n%sNo commands found matching:%s %s\n\n", lightBlue, reset, query), nil
 	}
 
 	var output strings.Builder
-	output.WriteString(fmt.Sprintf("\n\n Found %d commands:\n\n", len(commands)))
+	output.WriteString(fmt.Sprintf("\n%s╭─ Found %d commands matching '%s'%s\n", lightBlue, len(commands), query, reset))
 	for _, cmd := range commands {
-		output.WriteString(fmt.Sprintf("[%s] %s\n",
-			cmd.Timestamp.Format("15:04:05"),
+		output.WriteString(fmt.Sprintf("%s│%s %s[%s]%s %s\n",
+			lightBlue, reset,
+			dimBlue, cmd.Timestamp.Format("15:04:05"), reset,
 			cmd.Command))
 	}
-	output.WriteString("\n")
+	output.WriteString(fmt.Sprintf("%s╰─%s\n\n", lightBlue, reset))
 
 	return output.String(), nil
 }
 
 func handleSemanticHistory(query string, db *database.DB) (string, error) {
+	lightBlue := "\033[38;2;93;173;226m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
+
 	embedService, err := ai.NewEmbeddingService()
 	if err != nil {
 		return "", err
@@ -141,24 +173,30 @@ func handleSemanticHistory(query string, db *database.DB) (string, error) {
 	}
 
 	if len(commands) == 0 {
-		return fmt.Sprintf("\nNo semantically similar commands found for: %s\n\n", query), nil
+		return fmt.Sprintf("\n%sNo similar commands found for:%s %s\n\n", lightBlue, reset, query), nil
 	}
 
 	var output strings.Builder
-	output.WriteString(fmt.Sprintf("\n\n Found %d similar commands:\n\n", len(commands)))
+	output.WriteString(fmt.Sprintf("\n%s╭─ Found %d similar commands for '%s'%s\n", lightBlue, len(commands), query, reset))
 	for _, cmd := range commands {
-		output.WriteString(fmt.Sprintf("[%s] %s\n",
-			cmd.Timestamp.Format("15:04:05"),
+		output.WriteString(fmt.Sprintf("%s│%s %s[%s]%s %s\n",
+			lightBlue, reset,
+			dimBlue, cmd.Timestamp.Format("15:04:05"), reset,
 			cmd.Command))
 	}
-	output.WriteString("\n")
+	output.WriteString(fmt.Sprintf("%s╰─%s\n\n", lightBlue, reset))
 
 	return output.String(), nil
 }
 
 func handleStats(db *database.DB) (string, error) {
+	lightBlue := "\033[38;2;93;173;226m"
+	cyan := "\033[38;2;0;209;255m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
+
 	if db == nil {
-		return "\nDatabase not available\n\n", nil
+		return fmt.Sprintf("\n%s✗ Database not available%s\n\n", dimBlue, reset), nil
 	}
 
 	stats, err := db.GetStats()
@@ -167,28 +205,41 @@ func handleStats(db *database.DB) (string, error) {
 	}
 
 	var output strings.Builder
-	output.WriteString("\n\n Mako Statistics:\n\n")
-	output.WriteString(fmt.Sprintf("  Total commands: %d\n", stats["total_commands"]))
-	output.WriteString(fmt.Sprintf("  Commands today: %d\n", stats["commands_today"]))
-	output.WriteString(fmt.Sprintf("  Avg duration: %.0fms\n\n", stats["avg_duration_ms"]))
+	output.WriteString(fmt.Sprintf("\n%s╭─ Mako Statistics%s\n", lightBlue, reset))
+	output.WriteString(fmt.Sprintf("%s│%s  Total commands    %s%d%s\n", lightBlue, reset, cyan, stats["total_commands"], reset))
+	output.WriteString(fmt.Sprintf("%s│%s  Commands today    %s%d%s\n", lightBlue, reset, cyan, stats["commands_today"], reset))
+	output.WriteString(fmt.Sprintf("%s│%s  Avg duration      %s%.0fms%s\n", lightBlue, reset, cyan, stats["avg_duration_ms"], reset))
+	output.WriteString(fmt.Sprintf("%s╰─%s\n\n", lightBlue, reset))
 
 	return output.String(), nil
 }
 
 func getHelpText() string {
-	return `
+	lightBlue := "\033[38;2;93;173;226m"
+	cyan := "\033[38;2;0;209;255m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
 
- Mako Commands (inside Mako shell):
+	return fmt.Sprintf(`
+%s╭─ Mako Commands%s
+%s│%s
+%s│%s  %smako ask <question>%s              Generate command from natural language
+%s│%s  %smako history%s                     Show recent commands
+%s│%s  %smako history <keyword>%s           Search by keyword
+%s│%s  %smako history semantic <query>%s    Search by meaning
+%s│%s  %smako stats%s                       Show statistics
+%s│%s  %smako help%s                        Show this help
+%s│%s
+%s╰─%s %sRegular shell commands work normally!%s
 
-  mako ask <question>              Generate command from natural language
-  mako history                     Show recent commands
-  mako history <keyword>           Search by keyword
-  mako history semantic <query>    Search by meaning
-  mako stats                       Show statistics
-  mako help                        Show this help
-  mako version                     Show the current Mako version
-
-Regular shell commands work normally!
-
-`
+`, lightBlue, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset, dimBlue, reset)
 }
