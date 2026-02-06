@@ -24,16 +24,16 @@ func main() {
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "ask":
-			if len(os.Args) >= 3 {
-				handleAskCommand(os.Args[2:])
-				return
-			}
-		case "history":
-			handleHistoryCommand(os.Args[2:])
+		case "help", "-h", "--help":
+			showHelp()
 			return
-		case "stats":
-			handleStatsCommand()
+		case "version", "-v", "--version":
+			fmt.Println(" Mako v0.1.0 - AI-Native Shell Orchestrator")
+			return
+		case "ask", "history", "stats":
+			fmt.Printf(" '%s' command should be used inside Mako shell\n\n", os.Args[1])
+			fmt.Println("Start Mako with: ./mako")
+			fmt.Printf("Then inside Mako: mako %s <args>\n", os.Args[1])
 			return
 		}
 	}
@@ -41,172 +41,42 @@ func main() {
 	runShellWrapper()
 }
 
-func handleHistoryCommand(args []string) {
-	dbPath := filepath.Join(os.Getenv("HOME"), ".mako", "history.db")
-	db, err := database.NewDB(dbPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to open database: %v\n", err)
-		os.Exit(1)
-	}
-	defer db.Close()
+func showHelp() {
+	help := `
+ Mako - AI-Native Shell Orchestrator
 
-	if len(args) > 0 && args[0] == "semantic" {
-		if len(args) < 2 {
-			fmt.Println("Usage: mako history semantic <query>")
-			fmt.Println("Example: mako history semantic 'compress video'")
-			return
-		}
+USAGE:
+    mako                                    Start Mako shell wrapper
+    mako ask <question>                     Generate shell command from natural language
+    mako history                            Show recent command history
+    mako history <keyword>                  Search history by keyword
+    mako history semantic <query>           Search history by meaning
+    mako stats                              Show usage statistics
+    mako help                               Show this help message
+    mako version                            Show version
 
-		handleSemanticSearch(db, args[1:])
-		return
-	}
+EXAMPLES:
+    mako ask "find all files larger than 100MB"
+    mako history semantic "compress video"
+    mako history grep
 
-	if len(args) == 0 {
-		commands, err := db.GetRecentCommands(20)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v", err)
-			os.Exit(1)
-		}
+INSIDE MAKO SHELL:
+    Type commands normally - they're automatically saved with embeddings
+    Use Ctrl+D or 'exit' to leave Mako
 
-		if len(commands) == 0 {
-			fmt.Println("No command history yet. Run some commands in Mako first!")
-			return
-		}
+FEATURES:
+     AI-powered command generation
+     Semantic command search
+     Automatic command history
+     Full-text search
+     Beautiful custom prompt
 
-		fmt.Println("Recent command history:")
-		for _, cmd := range commands {
-			fmt.Printf("\n[%s] %s\n",
-				cmd.Timestamp.Format("2006-01-02 15:04:05"),
-				cmd.Command)
-			if cmd.ExitCode != 0 {
-				fmt.Printf(" Exit code: %d\n", cmd.ExitCode)
-			}
-		}
-	} else {
-		query := strings.Join(args, " ")
-		commands, err := db.SearchCommands(query, 10)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Search error: %v\n", err)
-			os.Exit(1)
-		}
+ENVIRONMENT:
+    GEMINI_API_KEY    Your Gemini API key (required for AI features)
 
-		if len(commands) == 0 {
-			fmt.Printf("No commands found matching: %s\n", query)
-			return
-		}
-
-		fmt.Printf("Found %d commands matching: '%s':\n", len(commands), query)
-		for _, cmd := range commands {
-			fmt.Printf("\n[%s] %s\n",
-				cmd.Timestamp.Format("2006-01-02 15:04:05"),
-				cmd.Command)
-		}
-	}
-}
-
-func handleSemanticSearch(db *database.DB, args []string) {
-	query := strings.Join(args, " ")
-
-	fmt.Printf(" Semantic search for: '%s'\n", query)
-	fmt.Println(" Generating embedding...")
-
-	embedService, err := ai.NewEmbeddingService()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	queryVec, err := embedService.Embed(query)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error generating embedding: %v\n", err)
-		os.Exit(1)
-	}
-
-	queryBytes := ai.VectorToBytes(queryVec)
-
-	commands, err := db.SearchCommandsSemantic(queryBytes, 10, 0.5)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Search error: %v\n", err)
-		os.Exit(1)
-	}
-
-	if len(commands) == 0 {
-		fmt.Printf("\n No commands found with semantic similarity to '%s'\n", query)
-		fmt.Println(" Tip: Try running more commands first, or use regular search:")
-		fmt.Printf("   mako history %s\n", query)
-		return
-	}
-
-	fmt.Printf("\n Found %d semantically similar commands:\n", len(commands))
-	for _, cmd := range commands {
-		fmt.Printf("\n[%s] %s\n",
-			cmd.Timestamp.Format("2006-01-02 15:04:05"),
-			cmd.Command)
-	}
-}
-
-func handleStatsCommand() {
-	dbPath := filepath.Join(os.Getenv("HOME"), ".mako", "history.db")
-	db, err := database.NewDB(dbPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to open database: %v\n", err)
-		os.Exit(1)
-	}
-	defer db.Close()
-
-	stats, err := db.GetStats()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting stats: %v\n", err)
-		os.Exit(1)
-	}
-
-	fmt.Println("Mako Statistics:")
-	fmt.Printf("  Total commands: %d\n", stats["total_commands"])
-	fmt.Printf("  Commands today: %d\n", stats["commands_today"])
-	fmt.Printf("  Avg duration: %.0fms\n", stats["avg_duration_ms"])
-}
-
-func handleAskCommand(args []string) {
-	userRequest := strings.Join(args, " ")
-	fmt.Printf("Mako is thinking about: %s\n", userRequest)
-
-	client, err := ai.NewGeminiClient()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Make sure GEMINI_API_KEY is set in  your environment.\n")
-		os.Exit(1)
-	}
-
-	context := ai.GetSystemContext([]string{})
-
-	command, err := client.GenerateCommand(userRequest, context)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error generating command: %v\n", err)
-	}
-
-	fmt.Printf("\nSuggested command:\n")
-	fmt.Printf("   %s\n\n", command)
-
-	fmt.Printf("Execute this command? [y/N]: ")
-	var response string
-	fmt.Scanln(&response)
-
-	response = strings.ToLower(strings.TrimSpace(response))
-	if response != "y" && response != "yes" {
-		fmt.Printf("Command not executed\n")
-		return
-	}
-
-	fmt.Println("Executing...")
-	cmd := exec.Command("bash", "-c", command)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Command failde: %v\n", err)
-		os.Exit(1)
-	}
+For more info: https://github.com/fabiobrug/mako
+`
+	fmt.Println(help)
 }
 
 func runShellWrapper() {
@@ -215,7 +85,14 @@ func runShellWrapper() {
 		shell = "/bin/bash"
 	}
 
-	fmt.Printf(" Mako starting with shell: %s\n	", shell)
+	biolumeCyan := "\033[38;2;0;209;255m"
+	deepAtlantic := "\033[38;2;93;173;226m"
+	dorsalGrey := "\033[38;2;149;165;166m"
+	reset := "\033[0m"
+
+	fmt.Printf("%s Mako starting with shell: %s%s\n", biolumeCyan, shell, reset)
+
+	fmt.Printf("%s", dorsalGrey)
 	fmt.Println(`
  ███        ███      ████        ███  ███     █████████    
  ████      ████     ██████       ███ ███    ███     ███░   
@@ -225,6 +102,9 @@ func runShellWrapper() {
  ███        ███ ███        ███   ███   ███   █████████░    
  ░░░        ░░░ ░░░        ░░░   ░░░   ░░░    ░░░░░░░░░    
     `)
+	fmt.Print(reset)
+
+	fmt.Printf("%s", deepAtlantic)
 	fmt.Println(`
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -240,7 +120,7 @@ func runShellWrapper() {
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⢿⣿⣿⣿⣿⣿⣶⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⡄⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⠿⠛⠉⠁⠀⠈⠉⠙⠛⠛⠻⠿⠿⠿⠿⠟⠛⠃⠀⠀⠀⠉⠉⠉⠛⠛⠛⠿⠿⠿⣶⣦⣄⡀⠀⠀⠀⠀⠀⠈⠙⠛⠂
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠿⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀`)
-
+	fmt.Print(reset)
 	dbPath := filepath.Join(os.Getenv("HOME"), ".mako", "history.db")
 	db, err := database.NewDB(dbPath)
 	if err != nil {
@@ -253,12 +133,15 @@ func runShellWrapper() {
 		}
 	}()
 
-	workingDir, _ := os.Getwd()
-	_ = workingDir
-
 	interceptor := stream.NewInterceptor(500)
+	if db != nil {
+		interceptor.SetDatabase(db)
+	}
 
-	cmd := exec.Command(shell)
+	makoRcPath := createMakoRc()
+	defer os.Remove(makoRcPath)
+
+	cmd := exec.Command(shell, "--rcfile", makoRcPath, "-i")
 
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
@@ -267,7 +150,6 @@ func runShellWrapper() {
 	}
 	defer func() {
 		ptmx.Close()
-
 		lines := interceptor.GetAllLines()
 		fmt.Printf("\n Captured %d lines of output\n", len(lines))
 	}()
@@ -294,6 +176,50 @@ func runShellWrapper() {
 	interceptor.Tee(os.Stdout, ptmx)
 
 	fmt.Println("\n Mako exiting...")
+}
+
+func createMakoRc() string {
+	homeDir := os.Getenv("HOME")
+	makoDir := filepath.Join(homeDir, ".mako")
+	cmdFile := filepath.Join(makoDir, "last_command.txt")
+
+	os.MkdirAll(makoDir, 0755)
+
+	content := fmt.Sprintf(`
+# Source user's normal bashrc first
+if [ -f %s/.bashrc ]; then
+    source %s/.bashrc
+fi
+
+# Mako customizations
+export MAKO_ACTIVE=1
+MAKO_CMD_FILE="%s"
+
+# Create a 'mako' shell function
+mako() {
+    # Write command to file for interceptor to read
+    echo "mako $@" > "$MAKO_CMD_FILE"
+    # Print a unique marker
+    echo "<<<MAKO_EXECUTE>>>"
+}
+
+# Shark-themed PS1
+PS1='\[\033[1;94m\]\u\[\033[0;90m\]@\[\033[0;96m\]\h\[\033[0;37m\]:\[\033[1;94m\]\w\[\033[0;90m\]=> \[\033[0m\]'
+
+echo ""
+echo " Mako shell active - type 'mako help' for commands"
+echo ""
+`, homeDir, homeDir, cmdFile)
+
+	tmpFile, err := os.CreateTemp("", "makorc-*.sh")
+	if err != nil {
+		return ""
+	}
+
+	tmpFile.WriteString(content)
+	tmpFile.Close()
+
+	return tmpFile.Name()
 }
 
 func syncBashHistory(db *database.DB) {
