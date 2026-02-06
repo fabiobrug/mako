@@ -1,0 +1,321 @@
+# Mako Project - Cursor Rules
+
+## Project Overview
+Mako is an AI-native shell orchestrator that wraps around bash/zsh to provide intelligent command assistance. It intercepts terminal I/O through a PTY (pseudo-terminal) and routes commands to AI for natural language processing.
+
+## Tech Stack
+- **Language**: Go 1.25+
+- **Key Dependencies**: 
+  - `creack/pty` - PTY handling
+  - `mattn/go-sqlite3` - Database with FTS5
+  - `atotto/clipboard` - Clipboard operations
+- **AI Provider**: Google Gemini API
+  - `gemini-2.0-flash-exp` for command generation
+  - `text-embedding-004` for semantic search
+- **Build Command**: `go build -tags "fts5" -o mako cmd/mako/main.go`
+
+## Architecture
+
+### PTY Flow
+```
+User Input → PTY Master → Bash Shell → PTY Slave → Stream Interceptor → Output
+                ↑                                            ↓
+                └─────────── Command Detection ─────────────┘
+```
+
+### Command Interception
+1. User types `mako ask "natural language"`
+2. Shell function writes to `~/.mako/last_command.txt`
+3. Shell function prints marker: `<<<MAKO_EXECUTE>>>`
+4. Stream interceptor detects marker
+5. Reads command file, routes to `internal/shell/commands.go`
+6. Executes and returns output
+
+### Interactive Menu System
+- **Main binary**: `mako` - Shell orchestrator
+- **Menu binary**: `mako-menu` - Standalone TUI for user choices
+- **Communication**: 
+  - Pause file: `~/.mako/pause_input` stops PTY input during menu
+  - Menu writes choice to stdout, parent captures it
+  - Both use `/dev/tty` for direct terminal access
+
+## Critical Terminal Formatting Rules
+
+### The Line Ending Problem
+**Issue**: Unix programs output `\n` (newline), but PTY terminals need `\r\n` (carriage return + newline) for proper display. Without `\r`, each line continues from where the last one ended, creating a "staircase" effect.
+
+**Wrong output**:
+```
+line 1
+      line 2
+            line 3
+```
+
+**Correct output**:
+```
+line 1
+line 2
+line 3
+```
+
+### Solution Approaches
+
+#### ❌ Failed Approach: PTY Termios Configuration
+```go
+// This DOESN'T work reliably
+ptyTermios.Oflag |= syscall.OPOST | syscall.ONLCR
+```
+**Why it fails**: Terminal state conflicts between PTY and direct `/dev/tty` access
+
+#### ✅ Working Approach: Manual Line Ending Replacement
+```go
+// ALWAYS do this for command output
+output := strings.ReplaceAll(output, "\n", "\r\n")
+writeTTY(output)
+```
+
+**Where to apply**:
+1. `internal/stream/interceptor.go` - Intercepted command output
+2. `internal/shell/commands.go` - `mako ask` command execution output
+3. `cmd/mako-menu/main.go` - Menu display output
+
+### Menu Drawing Best Practices
+
+#### Key Principles
+1. **Know your cursor position**: After drawing, cursor must be at a predictable location
+2. **Use \033[J**: Clear from cursor to end of screen (simpler than line-by-line)
+3. **Avoid cursor save/restore in loops**: It's unreliable across different terminals
+4. **Clear before redraw**: Always clear old content before drawing new
+
+#### Menu Redraw Pattern
+```go
+menuLines := len(items) + 5 // Calculate exact height
+
+draw := func() {
+    // Draw menu, leave cursor at end of last line
+    tty.WriteString("\r\033[K\n") // Clear line + newline
+    // ... draw menu lines with \033[K at end of each
+    tty.WriteString("last line\033[K") // No newline at end
+}
+
+redraw := func() {
+    // Move up to start (cursor is at end of last line)
+    for i := 0; i < menuLines-1; i++ {
+        tty.WriteString("\033[A") // Up one line
+    }
+    tty.WriteString("\033[J") // Clear everything below cursor
+    draw() // Redraw fresh
+}
+```
+
+### ANSI Escape Sequences Reference
+```go
+"\r"       // Carriage return - move to start of line
+"\n"       // Line feed - move down one line
+"\r\n"     // Proper line ending for PTY
+"\033[K"   // Clear from cursor to end of line
+"\033[J"   // Clear from cursor to end of screen
+"\033[A"   // Move cursor up one line
+"\033[B"   // Move cursor down one line
+"\0337"    // Save cursor position (unreliable)
+"\0338"    // Restore cursor position (unreliable)
+```
+
+## File Structure & Responsibilities
+
+### `cmd/mako/main.go`
+- PTY creation and management
+- Signal handling (SIGWINCH for resize)
+- Raw terminal mode setup
+- I/O goroutines (stdin → PTY, PTY → stream interceptor)
+
+### `cmd/mako-menu/main.go`
+- Standalone interactive menu
+- Reads from `/dev/tty` for input/output
+- Returns choice via stdout
+- Must clean up completely on exit
+
+### `internal/stream/interceptor.go`
+- Captures all PTY output
+- Detects `<<<MAKO_EXECUTE>>>` marker
+- Routes to command handlers
+- **MUST** convert `\n` to `\r\n` in output
+
+### `internal/shell/commands.go`
+- Command routing: `ask`, `history`, `stats`, etc.
+- AI integration for command generation
+- Interactive menu invocation
+- Database operations
+- **MUST** convert `\n` to `\r\n` in command output
+
+### `internal/ai/gemini.go`
+- Gemini API client
+- Command generation from natural language
+- Response parsing and cleaning
+
+### `internal/database/db.go`
+- SQLite operations with FTS5
+- Command history storage
+- Semantic search with vector embeddings
+
+## Common Pitfalls & Solutions
+
+### 1. Menu Duplication on Arrow Keys
+**Symptom**: Multiple menus appear when navigating
+**Cause**: Not clearing old menu before redrawing
+**Solution**: Use `\033[J` after moving cursor to menu start
+
+### 2. Output Staircase Effect
+**Symptom**: Each line shifted right from previous
+**Cause**: Missing `\r` in line endings
+**Solution**: `strings.ReplaceAll(output, "\n", "\r\n")`
+
+### 3. Menu Not Clearing on Selection
+**Symptom**: Menu remnants visible after choosing option
+**Cause**: Wrong cursor position when clearing
+**Solution**: Track exact position, move up `menuLines-1`, then clear
+
+### 4. Command Output Interferes with Menu
+**Symptom**: Menu appears during command execution
+**Cause**: Pause file not created early enough
+**Solution**: Create `~/.mako/pause_input` before showing menu
+
+### 5. Clipboard Contains Markers
+**Symptom**: `[200~text~` when pasting
+**Cause**: Bracketed paste markers from terminal
+**Solution**: Clean command after AI generation, not at copy time
+
+## Development Workflow
+
+### Building
+```bash
+# Main binary
+go build -tags "fts5" -o mako cmd/mako/main.go
+
+# Menu binary
+go build -o mako-menu cmd/mako-menu/main.go
+
+# Both at once
+go build -tags "fts5" -o mako cmd/mako/main.go && go build -o mako-menu cmd/mako-menu/main.go
+```
+
+### Testing
+```bash
+# Start Mako
+./mako
+
+# Inside Mako shell:
+mako ask list files
+mako history
+mako stats
+mako help
+
+# Test formatting with multi-line output:
+mako ask list files with details  # Should generate: ls -lh
+```
+
+### Debugging
+```bash
+# Check if menu binary exists and is executable
+ls -lh mako-menu
+
+# Check pause mechanism
+cat ~/.mako/pause_input  # Should exist during menu display
+
+# Check command file
+cat ~/.mako/last_command.txt  # Written by shell function
+```
+
+## Code Style Guidelines
+
+### Error Handling
+```go
+// ✅ Good - graceful degradation
+if err != nil {
+    return "", fmt.Errorf("operation failed: %w", err)
+}
+
+// ❌ Bad - silent failure
+if err != nil {
+    return "", nil
+}
+```
+
+### Terminal Output
+```go
+// ✅ Good - proper line endings
+output := strings.ReplaceAll(cmdOutput, "\n", "\r\n")
+fmt.Fprint(tty, output)
+
+// ❌ Bad - missing \r
+fmt.Fprint(tty, cmdOutput)
+```
+
+### Menu Operations
+```go
+// ✅ Good - explicit cleanup
+tty.WriteString("\033[J")  // Clear below cursor
+
+// ❌ Bad - assumptions
+tty.WriteString("\033[2J")  // Clear entire screen (erases history)
+```
+
+## Environment Setup
+```bash
+# .env file (in project root, gitignored)
+GEMINI_API_KEY=your_api_key_here
+
+# Directory structure created at runtime
+~/.mako/
+  ├── pause_input         # Temporary flag file
+  ├── last_command.txt    # IPC for command passing
+  └── mako.db            # SQLite database
+```
+
+## Future Considerations
+
+### Week 6+: Contextual Awareness
+- Feed recent terminal output to AI
+- Smarter command suggestions based on context
+- Error patterns detection
+
+### Safety Features
+- Prevent destructive commands (`rm -rf /`)
+- Detect sudo password exposure
+- Command simulation mode
+
+### Privacy
+- Secret redaction in history
+- Optional encryption for sensitive commands
+- Configurable history retention
+
+## Troubleshooting Checklist
+
+When things go wrong:
+
+1. **Menu not appearing**
+   - Check if `mako-menu` binary exists in same directory as `mako`
+   - Verify path detection in `internal/shell/commands.go`
+
+2. **Formatting issues**
+   - Add `strings.ReplaceAll(output, "\n", "\r\n")` to output path
+   - Check PTY configuration hasn't been changed
+
+3. **Menu duplication**
+   - Verify `redraw()` clears with `\033[J`
+   - Ensure cursor position tracking is correct
+
+4. **Command not intercepted**
+   - Check marker `<<<MAKO_EXECUTE>>>` is printed
+   - Verify stream interceptor is running
+   - Check `~/.mako/last_command.txt` is written
+
+5. **Database errors**
+   - Ensure build uses `-tags "fts5"`
+   - Check SQLite file permissions in `~/.mako/`
+
+## Contact & Contribution
+- Project Lead: Fabio (@fabiobrug)
+- Language: English preferred
+- Style: Clean, working code over extensive comments
+- Testing: Incremental, verify each change before proceeding

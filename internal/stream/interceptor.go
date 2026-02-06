@@ -14,6 +14,16 @@ import (
 	"github.com/fabiobrug/mako.git/internal/shell"
 )
 
+var menuActive = false
+
+func SetMenuActive(active bool) {
+	menuActive = active
+}
+
+func IsMenuActive() bool {
+	return menuActive
+}
+
 var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
 
 type Interceptor struct {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -32,7 +31,7 @@ func main() {
 			lightBlue := "\033[38;2;93;173;226m"
 			dimBlue := "\033[38;2;120;150;180m"
 			reset := "\033[0m"
-			fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v0.1.1 %s%s\n", lightBlue, cyan, reset)
+			fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v0.1.2 %s%s\n", lightBlue, cyan, reset)
 			fmt.Printf("%s", dimBlue)
 			return
 		case "ask", "history", "stats":
@@ -187,10 +186,18 @@ func runShellWrapper() {
 		fmt.Fprintf(os.Stderr, "Failed to start PTY: %v\n", err)
 		os.Exit(1)
 	}
+
+	// Configure PTY for proper line ending handling
+	// This fixes the "staircase" effect in command output
+	if ptyTermios, err := GetTermios(ptmx.Fd()); err == nil {
+		ptyTermios.Oflag |= syscall.OPOST // Enable output processing
+		ptyTermios.Oflag |= syscall.ONLCR // Map NL to CR-NL on output
+		SetTermios(ptmx.Fd(), ptyTermios)
+	}
+
 	defer func() {
 		ptmx.Close()
-		// Clean exit - clear the line and print exit message
-		fmt.Print("\r\033[K") // Clear current line
+		fmt.Print("\r\033[K")
 		fmt.Printf("\n%s▸ Mako session ended%s\n", lightBlue, reset)
 	}()
 	ch := make(chan os.Signal, 1)
@@ -208,9 +215,31 @@ func runShellWrapper() {
 		panic(err)
 	}
 	defer Restore(os.Stdin.Fd(), oldState)
-	go func() { io.Copy(ptmx, os.Stdin) }()
+
+	// CRITICAL FIX: Input goroutine that checks for pause signal
+	pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			// Check if we should pause
+			if _, err := os.Stat(pauseFile); err == nil {
+				// Pause file exists - wait until it's removed
+				time.Sleep(50 * time.Millisecond)
+				continue
+			}
+
+			// Read from stdin
+			n, err := os.Stdin.Read(buf)
+			if err != nil || n == 0 {
+				return
+			}
+
+			// Forward to PTY
+			ptmx.Write(buf[:n])
+		}
+	}()
+
 	interceptor.Tee(os.Stdout, ptmx)
-	// Exit message moved to defer block above
 }
 
 func createMakoRc() string {
