@@ -112,29 +112,23 @@ func showMenu(title string, items []MenuItem) string {
 
 		switch buf[0] {
 		case 13, 10: // Enter
-			// Clear the menu
-			for i := 0; i < menuLines; i++ {
+			// Clear the menu properly
+			// Move up to first line of menu (cursor is at end of last line)
+			for i := 0; i < menuLines-1; i++ {
 				tty.WriteString("\033[A")
 			}
-			for i := 0; i < menuLines; i++ {
-				tty.WriteString("\r\033[K\n")
-			}
-			for i := 0; i < menuLines; i++ {
-				tty.WriteString("\033[A")
-			}
+			// Move to start of line and clear everything below
+			tty.WriteString("\r\033[J")
 			return items[selected].Value
 
 		case 3: // Ctrl+C
-			// Clear the menu
-			for i := 0; i < menuLines; i++ {
+			// Clear the menu properly
+			// Move up to first line of menu (cursor is at end of last line)
+			for i := 0; i < menuLines-1; i++ {
 				tty.WriteString("\033[A")
 			}
-			for i := 0; i < menuLines; i++ {
-				tty.WriteString("\r\033[K\n")
-			}
-			for i := 0; i < menuLines; i++ {
-				tty.WriteString("\033[A")
-			}
+			// Move to start of line and clear everything below
+			tty.WriteString("\r\033[J")
 			return "cancel"
 
 		case 27: // ESC

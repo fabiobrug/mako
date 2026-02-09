@@ -12,7 +12,11 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/fabiobrug/mako.git/internal/ai"
 	"github.com/fabiobrug/mako.git/internal/database"
+	"github.com/fabiobrug/mako.git/internal/safety"
 )
+
+// Global validator instance
+var validator = safety.NewValidator()
 
 func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 	trimmed := strings.TrimSpace(line)
@@ -38,7 +42,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "help":
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v0.1.2\n"), nil
+			return true, fmt.Sprintf("v0.1.3\n"), nil
 		case "draw":
 			return true, fmt.Sprintln(`
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -75,7 +79,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		return "", err
 	}
 
-	// Clean any bracketed paste markers that might have been introduced
+	// Clean any bracketed paste markers
 	command = strings.ReplaceAll(command, "\x1b[200~", "")
 	command = strings.ReplaceAll(command, "\x1b[201~", "")
 	command = strings.ReplaceAll(command, "[200~", "")
@@ -84,6 +88,9 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	command = strings.TrimSuffix(command, "~")
 	command = strings.TrimSpace(command)
 
+	// SAFETY CHECK: Validate command
+	validationResult := validator.ValidateCommand(command)
+
 	cyan := "\033[38;2;0;209;255m"
 	lightBlue := "\033[38;2;93;173;226m"
 	green := "\033[38;2;100;255;100m"
@@ -91,30 +98,68 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	gray := "\033[38;2;150;150;150m"
 	reset := "\033[0m"
 
-	// Display generated command
+	// Open tty for all output
 	tty, _ := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
 	if tty != nil {
-		output := fmt.Sprintf("\r\n%s╭─ Generated Command%s\r\n", lightBlue, reset)
-		output += fmt.Sprintf("%s│%s  %s%s%s\r\n", lightBlue, reset, cyan, command, reset)
-		output += fmt.Sprintf("%s╰─%s\r\n", lightBlue, reset)
-		fmt.Fprint(tty, output)
-		tty.Close()
+		defer tty.Close()
+	}
+	writeTTY := func(s string) {
+		if tty != nil {
+			fmt.Fprint(tty, s)
+		}
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	// Display generated command
+	output := fmt.Sprintf("\r\n%s╭─ Generated Command%s\r\n", lightBlue, reset)
+	output += fmt.Sprintf("%s│%s  %s%s%s\r\n", lightBlue, reset, cyan, command, reset)
+	output += fmt.Sprintf("%s╰─%s\r\n", lightBlue, reset)
+	writeTTY(output)
 
-	// CRITICAL: Create pause file to stop PTY input goroutine
+	// CRITICAL: Block critical risk commands immediately
+	if validationResult.Risk == safety.RiskCritical {
+		writeTTY(validator.FormatWarning(validationResult))
+		writeTTY(fmt.Sprintf("\r\n%s✗ Command blocked for safety%s\r\n\r\n", red, reset))
+		return "", nil
+	}
+
+	// Show warning for high/medium risk commands
+	if !validationResult.Safe {
+		writeTTY(validator.FormatWarning(validationResult))
+	}
+
+	// Create pause file BEFORE any delays
 	pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
 	os.WriteFile(pauseFile, []byte("1"), 0644)
-	defer os.Remove(pauseFile) // Always remove when done
 
-	// Call external mako-menu process
-	// Try multiple locations for mako-menu
+	// Small delay to ensure pause is active
+	time.Sleep(30 * time.Millisecond)
+
+	// Prepare menu options
+	menuArgs := []string{
+		fmt.Sprintf("%sWhat would you like to do?%s", lightBlue, reset),
+	}
+
+	// Add confirmation step for risky commands
+	if !validationResult.Safe {
+		menuArgs = append(menuArgs,
+			"Confirm and run|run",
+			"Copy to clipboard|copy",
+			"Cancel|cancel",
+		)
+	} else {
+		menuArgs = append(menuArgs,
+			"Run command|run",
+			"Copy to clipboard|copy",
+			"Cancel|cancel",
+		)
+	}
+
+	// Call mako-menu
 	var menuPath string
 	possiblePaths := []string{
 		"./mako-menu",
 		filepath.Join(filepath.Dir(os.Args[0]), "mako-menu"),
-		"mako-menu", // fallback to PATH
+		"mako-menu",
 	}
 
 	for _, path := range possiblePaths {
@@ -127,17 +172,10 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	}
 
 	if menuPath == "" {
-		menuPath = "mako-menu" // Last resort - try PATH
+		menuPath = "mako-menu"
 	}
 
-	menuCmd := exec.Command(menuPath,
-		fmt.Sprintf("%sWhat would you like to do?%s", lightBlue, reset),
-		"Run command|run",
-		"Copy to clipboard|copy",
-		"Cancel|cancel",
-	)
-
-	// Ensure menu runs with proper terminal
+	menuCmd := exec.Command(menuPath, menuArgs...)
 	menuCmd.Stderr = os.Stderr
 
 	choiceBytes, err := menuCmd.Output()
@@ -147,19 +185,11 @@ func handleAsk(query string, db *database.DB) (string, error) {
 
 	choice := strings.TrimSpace(string(choiceBytes))
 
-	// Small delay to ensure menu cleanup completes
-	time.Sleep(100 * time.Millisecond)
+	// Remove pause file immediately to resume input
+	os.Remove(pauseFile)
 
-	// Re-open tty for results
-	tty, _ = os.OpenFile("/dev/tty", os.O_WRONLY, 0)
-	writeTTY := func(s string) {
-		if tty != nil {
-			fmt.Fprint(tty, s)
-		}
-	}
-	if tty != nil {
-		defer tty.Close()
-	}
+	// Small delay for terminal to stabilize
+	time.Sleep(20 * time.Millisecond)
 
 	// Handle choice
 	switch choice {
@@ -169,7 +199,6 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		cmd := exec.Command("bash", "-c", command)
 		cmd.Stdin = os.Stdin
 
-		// Capture output to fix line endings
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
@@ -190,7 +219,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 			writeTTY(errOutput)
 		}
 
-		// Save to database
+		// Save to database with REDACTED secrets
 		if db != nil {
 			workingDir, _ := os.Getwd()
 			exitCode := 0
@@ -202,17 +231,20 @@ func handleAsk(query string, db *database.DB) (string, error) {
 				}
 			}
 
+			// Redact secrets before saving
+			safeCommand := validator.RedactSecrets(command)
+
 			embedService, _ := ai.NewEmbeddingService()
 			var embeddingBytes []byte
 			if embedService != nil {
-				vec, embedErr := embedService.Embed(command)
+				vec, embedErr := embedService.Embed(safeCommand)
 				if embedErr == nil {
 					embeddingBytes = ai.VectorToBytes(vec)
 				}
 			}
 
 			db.SaveCommand(database.Command{
-				Command:    command,
+				Command:    safeCommand,
 				Timestamp:  time.Now(),
 				ExitCode:   exitCode,
 				Duration:   duration,

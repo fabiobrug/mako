@@ -102,7 +102,7 @@ mako help
 
 ## Project Status
 
-**Current Version**: v0.1.2
+**Current Version**: v0.1.3
 
 **Completed Features** (Weeks 1-5):
 - ✅ PTY-based shell wrapper

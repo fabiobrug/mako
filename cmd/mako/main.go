@@ -31,7 +31,7 @@ func main() {
 			lightBlue := "\033[38;2;93;173;226m"
 			dimBlue := "\033[38;2;120;150;180m"
 			reset := "\033[0m"
-			fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v0.1.2 %s%s\n", lightBlue, cyan, reset)
+			fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v0.1.3 %s%s\n", lightBlue, cyan, reset)
 			fmt.Printf("%s", dimBlue)
 			return
 		case "ask", "history", "stats":
@@ -216,25 +216,37 @@ func runShellWrapper() {
 	}
 	defer Restore(os.Stdin.Fd(), oldState)
 
-	// CRITICAL FIX: Input goroutine that checks for pause signal
+	// Input forwarding with pause support
+	// Read larger chunks to preserve multi-byte sequences (escape codes, UTF-8, etc.)
 	pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
 	go func() {
-		buf := make([]byte, 1)
+		buf := make([]byte, 32) // Read up to 32 bytes at a time
 		for {
-			// Check if we should pause
-			if _, err := os.Stat(pauseFile); err == nil {
-				// Pause file exists - wait until it's removed
-				time.Sleep(50 * time.Millisecond)
-				continue
+			// Check if we should pause BEFORE reading
+			for {
+				if _, err := os.Stat(pauseFile); err != nil {
+					// No pause file - proceed
+					break
+				}
+				// Paused - wait
+				time.Sleep(20 * time.Millisecond)
 			}
 
-			// Read from stdin
+			// Read from stdin (this may block)
 			n, err := os.Stdin.Read(buf)
 			if err != nil || n == 0 {
 				return
 			}
 
-			// Forward to PTY
+			// Double-check pause status before forwarding
+			// (in case pause activated while we were blocked in Read)
+			if _, err := os.Stat(pauseFile); err == nil {
+				// Pause file exists now - don't forward this input
+				// The menu will handle it via /dev/tty
+				continue
+			}
+
+			// Forward entire chunk to PTY (preserves multi-byte sequences)
 			ptmx.Write(buf[:n])
 		}
 	}()
