@@ -15,8 +15,55 @@ import (
 	"github.com/fabiobrug/mako.git/internal/safety"
 )
 
-// Global validator instance
 var validator = safety.NewValidator()
+
+// Global reference to ring buffer (will be set from main)
+var recentOutputGetter func(int) []string
+
+// SetRecentOutputGetter allows main to provide ring buffer access
+func SetRecentOutputGetter(getter func(int) []string) {
+	recentOutputGetter = getter
+}
+
+// wrapLine wraps a line of text to fit within maxWidth characters
+func wrapLine(text string, maxWidth int) []string {
+	if len(text) <= maxWidth {
+		return []string{text}
+	}
+
+	var lines []string
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return []string{text}
+	}
+
+	currentLine := ""
+	for _, word := range words {
+		// If adding this word would exceed maxWidth, start a new line
+		if len(currentLine)+len(word)+1 > maxWidth {
+			if currentLine != "" {
+				lines = append(lines, currentLine)
+				currentLine = word
+			} else {
+				// Single word is longer than maxWidth, split it
+				lines = append(lines, word[:maxWidth])
+				currentLine = word[maxWidth:]
+			}
+		} else {
+			if currentLine == "" {
+				currentLine = word
+			} else {
+				currentLine += " " + word
+			}
+		}
+	}
+
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+
+	return lines
+}
 
 func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 	trimmed := strings.TrimSpace(line)
@@ -44,22 +91,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "v", "version":
 			return true, fmt.Sprintf("v0.1.3\n"), nil
 		case "draw":
-			return true, fmt.Sprintln(`
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⡀⣀⢀⣀⣀⣀⣀⣀⣀⣀⣤⣤⣤⠤⠤⠤⠤⠤⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣼⣿⣿⣿⣿⢿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⢰⣿⣿⣿⣿⡉⠉⠉⠉⠉⠉⠉⠉⠉⠉⣾⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠻⠻⡿⢿⣿⣿⣇⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣶⣶⠀⠀
-⠈⢹⣿⣿⣿⣿⣿⣦⣼⣷⣦⣀⠀⠀⠀⠈⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠘⠛⢧⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣼⣿⣿⠀⠀⠀
-⠀⠀⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣤⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣰⣿⣿⣿⡿⠇⠀⠀⠀
-⠀⠀⠀⠈⠘⠿⣿⣿⣿⣿⣿⣿⠛⢿⠛⠟⠛⠋⠋⠉⠋⠙⠛⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠈⠉⠻⡿⡇⢀⣤⣤⣶⣶⣶⣶⣏⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣤⣆⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠶⠿⣄⠀⠀⠀⠀⠀⠀⠀⢤⣾⣿⣿⣿⣿⣿⠙⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⢾⡿⣿⣿⣿⣿⣿⣿⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠢⠤⢤⣀⣀⣀⣀⣀⣀⣀⣀⣀⣠⣤⣤⣤⣤⣤⣭⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠛⠻⡿⣿⣿⣿⣿⣿⣿⣷⣶⣤⣤⣄⣀⣀⣀⣠⣤⣶⣾⣿⣿⣿⣿⣿⣶⣤⣄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣠⣤⣶⣿⣿⣿⣿⣿⣿⢿⠟⠿⠛⠛⠛⠙⠿⣿⣿⣿⣿⣿⣾⡀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠙⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣆⣀⣀⣀⣿⠿⢿⣿⣿⣿⡿⠿⠟⠟⠛⠋⠈⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⣿⣿⣿⣷⣆⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣷⣶⣦⣬⣭⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⢿⢿⣿⣿⣀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣿⣿⣿⣿⣿⡏⠿⠙⠃⠋⠀⠀⠙⠛⠘⠟⠿⠻⠟⢿⠿⡿⠿⡿⢽⠿⡿⠻⠷⠆⠀⠁⠉⠀⠘⠋⠛⠘⠛⠿⠻⠿⠿⠿⣿⢶⣶⣤⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠋⠻⠻⠦⠤
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⡿⠿⠟⠛⠁⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠙⠛⠓⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀`), nil
-
+			return true, getSharkArt(), nil
 		default:
 			return true, fmt.Sprintf("Unknown mako command: %s\n", parts[1]), nil
 		}
@@ -73,13 +105,32 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	context := ai.GetSystemContext([]string{})
+
+	// ENHANCED: Get recent output and commands for context
+	var recentOutput []string
+	if recentOutputGetter != nil {
+		recentOutput = recentOutputGetter(10) // Last 10 lines
+	}
+
+	var recentCommands []string
+	if db != nil {
+		commands, err := db.GetRecentCommands(5)
+		if err == nil {
+			for _, cmd := range commands {
+				recentCommands = append(recentCommands, cmd.Command)
+			}
+		}
+	}
+
+	// Build enhanced context
+	context := ai.GetEnhancedContext(recentOutput, recentCommands)
+
 	command, err := client.GenerateCommand(query, context)
 	if err != nil {
 		return "", err
 	}
 
-	// Clean any bracketed paste markers
+	// Clean bracketed paste markers
 	command = strings.ReplaceAll(command, "\x1b[200~", "")
 	command = strings.ReplaceAll(command, "\x1b[201~", "")
 	command = strings.ReplaceAll(command, "[200~", "")
@@ -88,7 +139,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	command = strings.TrimSuffix(command, "~")
 	command = strings.TrimSpace(command)
 
-	// SAFETY CHECK: Validate command
+	// Safety validation
 	validationResult := validator.ValidateCommand(command)
 
 	cyan := "\033[38;2;0;209;255m"
@@ -98,7 +149,6 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	gray := "\033[38;2;150;150;150m"
 	reset := "\033[0m"
 
-	// Open tty for all output
 	tty, _ := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
 	if tty != nil {
 		defer tty.Close()
@@ -109,37 +159,36 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		}
 	}
 
-	// Display generated command
+	// Display command
 	output := fmt.Sprintf("\r\n%s╭─ Generated Command%s\r\n", lightBlue, reset)
 	output += fmt.Sprintf("%s│%s  %s%s%s\r\n", lightBlue, reset, cyan, command, reset)
 	output += fmt.Sprintf("%s╰─%s\r\n", lightBlue, reset)
 	writeTTY(output)
 
-	// CRITICAL: Block critical risk commands immediately
+	// Block critical commands
 	if validationResult.Risk == safety.RiskCritical {
 		writeTTY(validator.FormatWarning(validationResult))
 		writeTTY(fmt.Sprintf("\r\n%s✗ Command blocked for safety%s\r\n\r\n", red, reset))
 		return "", nil
 	}
 
-	// Show warning for high/medium risk commands
+	// Show warnings for risky commands
 	if !validationResult.Safe {
 		writeTTY(validator.FormatWarning(validationResult))
 	}
 
-	// Create pause file BEFORE any delays
+	time.Sleep(100 * time.Millisecond)
+
+	// Pause PTY input
 	pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
 	os.WriteFile(pauseFile, []byte("1"), 0644)
+	defer os.Remove(pauseFile)
 
-	// Small delay to ensure pause is active
-	time.Sleep(30 * time.Millisecond)
-
-	// Prepare menu options
+	// Menu options
 	menuArgs := []string{
 		fmt.Sprintf("%sWhat would you like to do?%s", lightBlue, reset),
 	}
 
-	// Add confirmation step for risky commands
 	if !validationResult.Safe {
 		menuArgs = append(menuArgs,
 			"Confirm and run|run",
@@ -154,7 +203,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		)
 	}
 
-	// Call mako-menu
+	// Call menu
 	var menuPath string
 	possiblePaths := []string{
 		"./mako-menu",
@@ -184,12 +233,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	}
 
 	choice := strings.TrimSpace(string(choiceBytes))
-
-	// Remove pause file immediately to resume input
-	os.Remove(pauseFile)
-
-	// Small delay for terminal to stabilize
-	time.Sleep(20 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// Handle choice
 	switch choice {
@@ -207,7 +251,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		execErr := cmd.Run()
 		duration := time.Since(startTime).Milliseconds()
 
-		// Write output with proper line endings
+		// Output with proper line endings
 		if stdout.Len() > 0 {
 			output := stdout.String()
 			output = strings.ReplaceAll(output, "\n", "\r\n")
@@ -219,7 +263,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 			writeTTY(errOutput)
 		}
 
-		// Save to database with REDACTED secrets
+		// Save to database
 		if db != nil {
 			workingDir, _ := os.Getwd()
 			exitCode := 0
@@ -231,7 +275,6 @@ func handleAsk(query string, db *database.DB) (string, error) {
 				}
 			}
 
-			// Redact secrets before saving
 			safeCommand := validator.RedactSecrets(command)
 
 			embedService, _ := ai.NewEmbeddingService()
@@ -253,8 +296,37 @@ func handleAsk(query string, db *database.DB) (string, error) {
 			})
 		}
 
+		// NEW: Auto-explain errors
 		if execErr != nil {
-			writeTTY(fmt.Sprintf("\r\n%s✗ Command failed%s\r\n\r\n", red, reset))
+			writeTTY(fmt.Sprintf("\r\n%s✗ Command failed%s\r\n", red, reset))
+
+			// Offer error explanation
+			if stderr.Len() > 0 {
+				writeTTY(fmt.Sprintf("\r\n%s Getting error explanation...%s\r\n", cyan, reset))
+
+				explanation, explainErr := client.ExplainError(command, stderr.String(), context)
+				if explainErr == nil && strings.TrimSpace(explanation) != "" {
+					writeTTY(fmt.Sprintf("\r\n%s╭─ Error Analysis%s\r\n", lightBlue, reset))
+
+					// Split into lines and display with proper formatting
+					lines := strings.Split(explanation, "\n")
+					for _, line := range lines {
+						line = strings.TrimSpace(line)
+						if line != "" {
+							// Wrap long lines to fit terminal width
+							wrappedLines := wrapLine(line, 76) // 76 chars to account for "│  " prefix
+							for _, wrappedLine := range wrappedLines {
+								writeTTY(fmt.Sprintf("%s│%s  %s\r\n", lightBlue, reset, wrappedLine))
+							}
+						}
+					}
+
+					writeTTY(fmt.Sprintf("%s╰─%s\r\n", lightBlue, reset))
+				} else if explainErr != nil {
+					writeTTY(fmt.Sprintf("%s⚠ Could not get explanation: %v%s\r\n", gray, explainErr, reset))
+				}
+			}
+			writeTTY("\r\n")
 		} else {
 			writeTTY(fmt.Sprintf("\r\n%s✓ Command executed successfully%s\r\n\r\n", green, reset))
 		}
@@ -411,4 +483,22 @@ func getHelpText() string {
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset,
 		lightBlue, reset, dimBlue, reset)
+}
+
+func getSharkArt() string {
+	return fmt.Sprintln(`
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⡀⣀⢀⣀⣀⣀⣀⣀⣀⣀⣤⣤⣤⠤⠤⠤⠤⠤⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣼⣿⣿⣿⣿⢿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢰⣿⣿⣿⣿⡉⠉⠉⠉⠉⠉⠉⠉⠉⠉⣾⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠻⠻⡿⢿⣿⣿⣇⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣶⣶⠀⠀
+⠈⢹⣿⣿⣿⣿⣿⣦⣼⣷⣦⣀⠀⠀⠀⠈⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠘⠛⢧⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣼⣿⣿⠀⠀⠀
+⠀⠀⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣤⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣰⣿⣿⣿⡿⠇⠀⠀⠀
+⠀⠀⠀⠈⠘⠿⣿⣿⣿⣿⣿⣿⠛⢿⠛⠟⠛⠋⠋⠉⠋⠙⠛⠳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠈⠉⠻⡿⡇⢀⣤⣤⣶⣶⣶⣶⣏⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣤⣆⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠶⠿⣄⠀⠀⠀⠀⠀⠀⠀⢤⣾⣿⣿⣿⣿⣿⠙⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⢾⡿⣿⣿⣿⣿⣿⣿⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠢⠤⢤⣀⣀⣀⣀⣀⣀⣀⣀⣀⣠⣤⣤⣤⣤⣤⣭⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠛⠻⡿⣿⣿⣿⣿⣿⣿⣷⣶⣤⣤⣄⣀⣀⣀⣠⣤⣶⣾⣿⣿⣿⣿⣿⣶⣤⣄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣠⣤⣶⣿⣿⣿⣿⣿⣿⢿⠟⠿⠛⠛⠛⠙⠿⣿⣿⣿⣿⣿⣾⡀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠙⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣆⣀⣀⣀⣿⠿⢿⣿⣿⣿⡿⠿⠟⠟⠛⠋⠈⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⣿⣿⣿⣷⣆⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣷⣶⣦⣬⣭⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⢿⢿⣿⣿⣀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣿⣿⣿⣿⣿⡏⠿⠙⠃⠋⠀⠀⠙⠛⠘⠟⠿⠻⠟⢿⠿⡿⠿⡿⢽⠿⡿⠻⠷⠆⠀⠁⠉⠀⠘⠋⠛⠘⠛⠿⠻⠿⠿⠿⣿⢶⣶⣤⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠋⠻⠻⠦⠤
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⡿⠿⠟⠛⠁⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠙⠛⠓⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀`)
 }

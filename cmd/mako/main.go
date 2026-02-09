@@ -14,6 +14,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/fabiobrug/mako.git/internal/ai"
 	"github.com/fabiobrug/mako.git/internal/database"
+	"github.com/fabiobrug/mako.git/internal/shell"
 	"github.com/fabiobrug/mako.git/internal/stream"
 	"github.com/joho/godotenv"
 )
@@ -125,9 +126,9 @@ func showHelp() {
 }
 
 func runShellWrapper() {
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "/bin/bash"
+	shellPath := os.Getenv("SHELL")
+	if shellPath == "" {
+		shellPath = "/bin/bash"
 	}
 	cyan := "\033[38;2;0;209;255m"
 	lightBlue := "\033[38;2;93;173;226m"
@@ -177,10 +178,15 @@ func runShellWrapper() {
 	if db != nil {
 		interceptor.SetDatabase(db)
 	}
+
+	shell.SetRecentOutputGetter(func(n int) []string {
+		return interceptor.GetRecentLines(n)
+	})
+
 	fmt.Printf("\n%s▸ Mako shell ready%s\n", lightBlue, reset)
 	makoRcPath := createMakoRc()
 	defer os.Remove(makoRcPath)
-	cmd := exec.Command(shell, "--rcfile", makoRcPath, "-i")
+	cmd := exec.Command(shellPath, "--rcfile", makoRcPath, "-i")
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start PTY: %v\n", err)

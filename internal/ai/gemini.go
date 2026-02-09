@@ -29,13 +29,6 @@ func NewGeminiClient() (*GeminiClient, error) {
 	}, nil
 }
 
-type SystemContext struct {
-	OS           string
-	Shell        string
-	CurrentDir   string
-	RecentOutput []string
-}
-
 func (g *GeminiClient) GenerateCommand(userRequest string, context SystemContext) (string, error) {
 	prompt := g.buildPrompt(userRequest, context)
 
@@ -64,7 +57,7 @@ func (g *GeminiClient) GenerateCommand(userRequest string, context SystemContext
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "applications/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := g.client.Do(req)
 	if err != nil {
@@ -117,12 +110,48 @@ func (g *GeminiClient) buildPrompt(userRequest string, context SystemContext) st
 
 	promptBuild.WriteString(fmt.Sprintf("System: %s\n", context.OS))
 	promptBuild.WriteString(fmt.Sprintf("Shell: %s\n", context.Shell))
-	promptBuild.WriteString(fmt.Sprintf("Current directory: %s\n\n", context.CurrentDir))
+	promptBuild.WriteString(fmt.Sprintf("Current directory: %s\n", context.CurrentDir))
 
+	// NEW: Include files in current directory
+	if len(context.WorkingFiles) > 0 {
+		promptBuild.WriteString(fmt.Sprintf("Files in directory: %s\n", strings.Join(context.WorkingFiles, ", ")))
+	}
+
+	// NEW: Include recent commands for context
+	if len(context.RecentCommands) > 0 {
+		promptBuild.WriteString("\nRecent commands:\n")
+		for _, cmd := range context.RecentCommands {
+			promptBuild.WriteString(fmt.Sprintf("  %s\n", cmd))
+		}
+	}
+
+	// ENHANCED: Actually use the recent output!
 	if len(context.RecentOutput) > 0 {
 		promptBuild.WriteString("\nRecent terminal output:\n")
-		for _, line := range context.RecentOutput {
-			promptBuild.WriteString(fmt.Sprintf(" %s\n", line))
+
+		// Analyze output for context hints
+		hints := AnalyzeRecentOutput(context.RecentOutput)
+
+		// Add intelligent context based on output
+		if hints["has_errors"] == "true" {
+			promptBuild.WriteString("(Note: Recent output contains errors)\n")
+		}
+		if hints["needs_sudo"] == "true" {
+			promptBuild.WriteString("(Note: Previous command had permission issues)\n")
+		}
+		if workingWith, ok := hints["working_with"]; ok {
+			promptBuild.WriteString(fmt.Sprintf("(Note: User is working with %s)\n", workingWith))
+		}
+
+		// Include last 5 lines of output
+		startIdx := len(context.RecentOutput) - 5
+		if startIdx < 0 {
+			startIdx = 0
+		}
+		for _, line := range context.RecentOutput[startIdx:] {
+			if strings.TrimSpace(line) != "" {
+				promptBuild.WriteString(fmt.Sprintf("  %s\n", line))
+			}
 		}
 	}
 
@@ -145,21 +174,18 @@ func (g *GeminiClient) cleanCommand(command string) string {
 }
 
 func (g *GeminiClient) ExplainError(failedCommand string, errorOutput string, context SystemContext) (string, error) {
-	prompt := fmt.Sprintf(`You are a helpful shell debugging assistant.
+	prompt := fmt.Sprintf(`Shell debugging assistant. Analyze this error briefly.
 
-System: %s
-Shell: %s
-Current directory: %s
+System: %s | Shell: %s | Dir: %s
 
-Failed command: %s
+Command: %s
+Error: %s
 
-Error output:
-%s
+Provide:
+EXPLANATION: Brief 1-2 sentence explanation of the error
+SUGGESTION: A corrected command (if applicable) or next steps
 
-Provide a brief explanation of what went wrong and suggest a corrected command.
-Format your response as:
-EXPLANATION: <brief explanation>
-SUGGESTION: <corrected command>`,
+Be concise and actionable.`,
 		context.OS,
 		context.Shell,
 		context.CurrentDir,
@@ -177,7 +203,7 @@ SUGGESTION: <corrected command>`,
 		},
 		"generationConfig": map[string]interface{}{
 			"temperature":     0.3,
-			"maxOutputTokens": 300,
+			"maxOutputTokens": 2048, // Significantly increased for complete responses
 		},
 	}
 
@@ -205,6 +231,10 @@ SUGGESTION: <corrected command>`,
 		return "", err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
+	}
+
 	var response struct {
 		Candidates []struct {
 			Content struct {
@@ -212,6 +242,7 @@ SUGGESTION: <corrected command>`,
 					Text string `json:"text"`
 				} `json:"parts"`
 			} `json:"content"`
+			FinishReason string `json:"finishReason"`
 		} `json:"candidates"`
 	}
 
@@ -223,5 +254,13 @@ SUGGESTION: <corrected command>`,
 		return "", fmt.Errorf("no response from API")
 	}
 
-	return response.Candidates[0].Content.Parts[0].Text, nil
+		// Check if response was truncated
+	finishReason := response.Candidates[0].FinishReason
+	if finishReason != "" && finishReason != "STOP" {
+		// Log truncation but still return what we got
+		fmt.Fprintf(os.Stderr, "Warning: API response truncated (reason: %s)\n", finishReason)
+	}
+
+	explanation := response.Candidates[0].Content.Parts[0].Text
+	return explanation, nil
 }
