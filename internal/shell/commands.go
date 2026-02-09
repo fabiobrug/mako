@@ -177,12 +177,13 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		writeTTY(validator.FormatWarning(validationResult))
 	}
 
-	time.Sleep(100 * time.Millisecond)
-
-	// Pause PTY input
+	// Pause PTY input BEFORE any delays to ensure immediate effect
 	pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
 	os.WriteFile(pauseFile, []byte("1"), 0644)
 	defer os.Remove(pauseFile)
+
+	// Short delay to ensure main goroutine detects pause file
+	time.Sleep(75 * time.Millisecond)
 
 	// Menu options
 	menuArgs := []string{

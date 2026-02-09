@@ -12,6 +12,13 @@ import (
 // mako-menu - Standalone menu for Mako shell
 // Uses only /dev/tty for display, writes choice to stdout
 
+const (
+	// TCFLSH is the ioctl command to flush terminal I/O
+	TCFLSH = 0x540B
+	// TCIFLUSH flushes data received but not read
+	TCIFLUSH = 0
+)
+
 type MenuItem struct {
 	Label string
 	Value string
@@ -53,6 +60,8 @@ func showMenu(title string, items []MenuItem) string {
 	fd := tty.Fd()
 	oldState, _ := getTermios(fd)
 	makeRaw(fd)
+	// Flush any buffered input to prevent first keystroke being lost
+	flushInput(fd)
 	defer restoreTermios(fd, oldState)
 
 	selected := 0
@@ -178,4 +187,9 @@ func makeRaw(fd uintptr) {
 func restoreTermios(fd uintptr, t *syscall.Termios) {
 	syscall.Syscall6(syscall.SYS_IOCTL, fd, syscall.TCSETS,
 		uintptr(unsafe.Pointer(t)), 0, 0, 0)
+}
+
+func flushInput(fd uintptr) {
+	// Flush input queue to discard any buffered keystrokes
+	syscall.Syscall(syscall.SYS_IOCTL, fd, TCFLSH, TCIFLUSH)
 }

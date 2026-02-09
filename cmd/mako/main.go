@@ -227,28 +227,53 @@ func runShellWrapper() {
 	pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
 	go func() {
 		buf := make([]byte, 32) // Read up to 32 bytes at a time
+		stdinFd := int(os.Stdin.Fd())
+		
 		for {
-			// Check if we should pause BEFORE reading
-			for {
-				if _, err := os.Stat(pauseFile); err != nil {
-					// No pause file - proceed
-					break
-				}
-				// Paused - wait
-				time.Sleep(20 * time.Millisecond)
-			}
-
-			// Read from stdin (this may block)
-			n, err := os.Stdin.Read(buf)
-			if err != nil || n == 0 {
-				return
-			}
-
-			// Double-check pause status before forwarding
-			// (in case pause activated while we were blocked in Read)
+			// Check if we should pause
 			if _, err := os.Stat(pauseFile); err == nil {
-				// Pause file exists now - don't forward this input
-				// The menu will handle it via /dev/tty
+				// Paused - wait and don't read
+				time.Sleep(20 * time.Millisecond)
+				continue
+			}
+
+			// Use select with timeout to check if stdin has data available
+			// This prevents blocking in Read() when pause file is created
+			readFds := &syscall.FdSet{}
+			FD_ZERO(readFds)
+			FD_SET(stdinFd, readFds)
+			
+			timeout := syscall.Timeval{Usec: 50000} // 50ms timeout
+			n, err := syscall.Select(stdinFd+1, readFds, nil, nil, &timeout)
+			if err != nil {
+				// Ignore EINTR (interrupted system call) - just retry
+				if err == syscall.EINTR {
+					continue
+				}
+				// For other errors, wait a bit and retry instead of exiting
+				time.Sleep(10 * time.Millisecond)
+				continue
+			}
+			
+			// If no data available, continue loop (will check pause file again)
+			if n == 0 {
+				continue
+			}
+
+			// Data is available, read it (won't block now)
+			n, err = os.Stdin.Read(buf)
+			if err != nil {
+				// On read error, wait and retry instead of killing the goroutine
+				time.Sleep(10 * time.Millisecond)
+				continue
+			}
+			if n == 0 {
+				continue
+			}
+
+			// Check pause status again before forwarding
+			if _, err := os.Stat(pauseFile); err == nil {
+				// Pause activated - discard this input
 				continue
 			}
 
@@ -414,4 +439,14 @@ func SetTermios(fd uintptr, termios *syscall.Termios) error {
 		return err
 	}
 	return nil
+}
+
+func FD_ZERO(set *syscall.FdSet) {
+	for i := range set.Bits {
+		set.Bits[i] = 0
+	}
+}
+
+func FD_SET(fd int, set *syscall.FdSet) {
+	set.Bits[fd/64] |= 1 << (uint(fd) % 64)
 }
