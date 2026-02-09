@@ -11,6 +11,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/fabiobrug/mako.git/internal/ai"
+	"github.com/fabiobrug/mako.git/internal/alias"
 	"github.com/fabiobrug/mako.git/internal/database"
 	"github.com/fabiobrug/mako.git/internal/safety"
 )
@@ -23,6 +24,48 @@ var recentOutputGetter func(int) []string
 // SetRecentOutputGetter allows main to provide ring buffer access
 func SetRecentOutputGetter(getter func(int) []string) {
 	recentOutputGetter = getter
+}
+
+// readLineFromTTY reads a line of input from /dev/tty with the prefilled text
+func readLineFromTTY(prefill string) (string, error) {
+	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
+	if err != nil {
+		return "", err
+	}
+	defer tty.Close()
+
+	// Write prefilled text
+	tty.WriteString(prefill)
+
+	// Read until newline - initialize with prefilled text
+	result := []byte(prefill)
+	buf := make([]byte, 1)
+	
+	for {
+		n, err := tty.Read(buf)
+		if err != nil {
+			return "", err
+		}
+		if n > 0 {
+			if buf[0] == '\n' || buf[0] == '\r' {
+				break
+			}
+			// Handle backspace
+			if buf[0] == 127 || buf[0] == 8 {
+				if len(result) > 0 {
+					result = result[:len(result)-1]
+					// Visual backspace: move back, print space, move back again
+					tty.WriteString("\b \b")
+				}
+			} else {
+				result = append(result, buf[0])
+				// Echo the character
+				tty.Write(buf)
+			}
+		}
+	}
+	
+	return string(result), nil
 }
 
 // wrapLine wraps a line of text to fit within maxWidth characters
@@ -86,10 +129,13 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "stats":
 			output, err := handleStats(db)
 			return true, output, err
+		case "alias":
+			output, err := handleAlias(parts[2:], db)
+			return true, output, err
 		case "help":
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v0.1.3\n"), nil
+			return true, fmt.Sprintf("v0.2.0\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
 		default:
@@ -193,12 +239,16 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	if !validationResult.Safe {
 		menuArgs = append(menuArgs,
 			"Confirm and run|run",
+			"Explain what this does|explain",
+			"Edit before running|edit",
 			"Copy to clipboard|copy",
 			"Cancel|cancel",
 		)
 	} else {
 		menuArgs = append(menuArgs,
 			"Run command|run",
+			"Explain what this does|explain",
+			"Edit before running|edit",
 			"Copy to clipboard|copy",
 			"Cancel|cancel",
 		)
@@ -333,6 +383,118 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		}
 		return "", nil
 
+	case "explain":
+		writeTTY(fmt.Sprintf("\r\n%s▸ Getting explanation...%s\r\n", cyan, reset))
+		
+		explanation, explainErr := client.ExplainCommand(command, context)
+		if explainErr != nil {
+			writeTTY(fmt.Sprintf("\r\n%s✗ Failed to get explanation: %v%s\r\n\r\n", red, explainErr, reset))
+			return "", nil
+		}
+
+		writeTTY(fmt.Sprintf("\r\n%s╭─ Command Explanation%s\r\n", lightBlue, reset))
+		lines := strings.Split(explanation, "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				wrappedLines := wrapLine(line, 76)
+				for _, wrappedLine := range wrappedLines {
+					writeTTY(fmt.Sprintf("%s│%s  %s\r\n", lightBlue, reset, wrappedLine))
+				}
+			}
+		}
+		writeTTY(fmt.Sprintf("%s╰─%s\r\n\r\n", lightBlue, reset))
+		return "", nil
+
+	case "edit":
+		writeTTY(fmt.Sprintf("\r\n%s▸ Edit command (press Enter when done):%s\r\n", cyan, reset))
+		writeTTY(fmt.Sprintf("%s> %s", gray, reset))
+		
+		// Use a simple line editor
+		editedCommand, editErr := readLineFromTTY(command)
+		if editErr != nil {
+			writeTTY(fmt.Sprintf("\r\n%s✗ Edit failed: %v%s\r\n\r\n", red, editErr, reset))
+			return "", nil
+		}
+
+		editedCommand = strings.TrimSpace(editedCommand)
+		if editedCommand == "" {
+			writeTTY(fmt.Sprintf("\r\n%sℹ Cancelled%s\r\n\r\n", gray, reset))
+			return "", nil
+		}
+
+		// Show edited command
+		writeTTY(fmt.Sprintf("\r\n%s╭─ Edited Command%s\r\n", lightBlue, reset))
+		writeTTY(fmt.Sprintf("%s│%s  %s%s%s\r\n", lightBlue, reset, cyan, editedCommand, reset))
+		writeTTY(fmt.Sprintf("%s╰─%s\r\n", lightBlue, reset))
+
+		// Execute edited command
+		command = editedCommand // Update command variable
+		writeTTY(fmt.Sprintf("\r\n%s▸ Executing...%s\r\n\r\n", cyan, reset))
+
+		cmd := exec.Command("bash", "-c", command)
+		cmd.Stdin = os.Stdin
+
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+
+		startTime := time.Now()
+		execErr := cmd.Run()
+		duration := time.Since(startTime).Milliseconds()
+
+		// Output with proper line endings
+		if stdout.Len() > 0 {
+			output := stdout.String()
+			output = strings.ReplaceAll(output, "\n", "\r\n")
+			writeTTY(output)
+		}
+		if stderr.Len() > 0 {
+			errOutput := stderr.String()
+			errOutput = strings.ReplaceAll(errOutput, "\n", "\r\n")
+			writeTTY(errOutput)
+		}
+
+		// Save to database
+		if db != nil {
+			workingDir, _ := os.Getwd()
+			exitCode := 0
+			if execErr != nil {
+				if exitErr, ok := execErr.(*exec.ExitError); ok {
+					exitCode = exitErr.ExitCode()
+				} else {
+					exitCode = 1
+				}
+			}
+
+			safeCommand := validator.RedactSecrets(command)
+
+			embedService, _ := ai.NewEmbeddingService()
+			var embeddingBytes []byte
+			if embedService != nil {
+				vec, embedErr := embedService.Embed(safeCommand)
+				if embedErr == nil {
+					embeddingBytes = ai.VectorToBytes(vec)
+				}
+			}
+
+			db.SaveCommand(database.Command{
+				Command:    safeCommand,
+				Timestamp:  time.Now(),
+				ExitCode:   exitCode,
+				Duration:   duration,
+				WorkingDir: workingDir,
+				Embedding:  embeddingBytes,
+			})
+		}
+
+		if execErr != nil {
+			writeTTY(fmt.Sprintf("\r\n%s✗ Command failed%s\r\n\r\n", red, reset))
+		} else {
+			writeTTY(fmt.Sprintf("\r\n%s✓ Command executed successfully%s\r\n\r\n", green, reset))
+		}
+		return "", nil
+
 	case "copy":
 		if clipboard.WriteAll(command) == nil {
 			writeTTY(fmt.Sprintf("\r\n%s✓ Copied to clipboard!%s\r\n\r\n", green, reset))
@@ -352,8 +514,12 @@ func handleAsk(query string, db *database.DB) (string, error) {
 
 func handleHistory(args []string, db *database.DB) (string, error) {
 	lightBlue := "\033[38;2;93;173;226m"
+	green := "\033[38;2;100;255;100m"
+	red := "\033[38;2;255;100;100m"
 	dimBlue := "\033[38;2;120;150;180m"
+	gray := "\033[38;2;150;150;150m"
 	reset := "\033[0m"
+	
 	if db == nil {
 		return fmt.Sprintf("\n%s✗ Database not available%s\n\n", dimBlue, reset), nil
 	}
@@ -374,9 +540,23 @@ func handleHistory(args []string, db *database.DB) (string, error) {
 		var output strings.Builder
 		output.WriteString(fmt.Sprintf("\n%s╭─ Recent Commands%s\n", lightBlue, reset))
 		for _, cmd := range commands {
-			output.WriteString(fmt.Sprintf("%s│%s %s[%s]%s %s\n",
+			// Status icon
+			statusIcon := fmt.Sprintf("%s✓%s", green, reset)
+			if cmd.ExitCode != 0 {
+				statusIcon = fmt.Sprintf("%s✗%s", red, reset)
+			}
+			
+			// Format duration
+			durationStr := fmt.Sprintf("%dms", cmd.Duration)
+			if cmd.Duration >= 1000 {
+				durationStr = fmt.Sprintf("%.1fs", float64(cmd.Duration)/1000.0)
+			}
+			
+			output.WriteString(fmt.Sprintf("%s│%s  %s %s[%s]%s %s%-6s%s %s\n",
 				lightBlue, reset,
+				statusIcon,
 				dimBlue, cmd.Timestamp.Format("15:04:05"), reset,
+				gray, durationStr, reset,
 				cmd.Command))
 		}
 		output.WriteString(fmt.Sprintf("%s╰─%s\n\n", lightBlue, reset))
@@ -393,9 +573,23 @@ func handleHistory(args []string, db *database.DB) (string, error) {
 	var output strings.Builder
 	output.WriteString(fmt.Sprintf("\n%s╭─ Found %d commands matching '%s'%s\n", lightBlue, len(commands), query, reset))
 	for _, cmd := range commands {
-		output.WriteString(fmt.Sprintf("%s│%s %s[%s]%s %s\n",
+		// Status icon
+		statusIcon := fmt.Sprintf("%s✓%s", green, reset)
+		if cmd.ExitCode != 0 {
+			statusIcon = fmt.Sprintf("%s✗%s", red, reset)
+		}
+		
+		// Format duration
+		durationStr := fmt.Sprintf("%dms", cmd.Duration)
+		if cmd.Duration >= 1000 {
+			durationStr = fmt.Sprintf("%.1fs", float64(cmd.Duration)/1000.0)
+		}
+		
+		output.WriteString(fmt.Sprintf("%s│%s  %s %s[%s]%s %s%-6s%s %s\n",
 			lightBlue, reset,
+			statusIcon,
 			dimBlue, cmd.Timestamp.Format("15:04:05"), reset,
+			gray, durationStr, reset,
 			cmd.Command))
 	}
 	output.WriteString(fmt.Sprintf("%s╰─%s\n\n", lightBlue, reset))
@@ -404,8 +598,12 @@ func handleHistory(args []string, db *database.DB) (string, error) {
 
 func handleSemanticHistory(query string, db *database.DB) (string, error) {
 	lightBlue := "\033[38;2;93;173;226m"
+	green := "\033[38;2;100;255;100m"
+	red := "\033[38;2;255;100;100m"
 	dimBlue := "\033[38;2;120;150;180m"
+	gray := "\033[38;2;150;150;150m"
 	reset := "\033[0m"
+	
 	embedService, err := ai.NewEmbeddingService()
 	if err != nil {
 		return "", err
@@ -425,9 +623,23 @@ func handleSemanticHistory(query string, db *database.DB) (string, error) {
 	var output strings.Builder
 	output.WriteString(fmt.Sprintf("\n%s╭─ Found %d similar commands for '%s'%s\n", lightBlue, len(commands), query, reset))
 	for _, cmd := range commands {
-		output.WriteString(fmt.Sprintf("%s│%s %s[%s]%s %s\n",
+		// Status icon
+		statusIcon := fmt.Sprintf("%s✓%s", green, reset)
+		if cmd.ExitCode != 0 {
+			statusIcon = fmt.Sprintf("%s✗%s", red, reset)
+		}
+		
+		// Format duration
+		durationStr := fmt.Sprintf("%dms", cmd.Duration)
+		if cmd.Duration >= 1000 {
+			durationStr = fmt.Sprintf("%.1fs", float64(cmd.Duration)/1000.0)
+		}
+		
+		output.WriteString(fmt.Sprintf("%s│%s  %s %s[%s]%s %s%-6s%s %s\n",
 			lightBlue, reset,
+			statusIcon,
 			dimBlue, cmd.Timestamp.Format("15:04:05"), reset,
+			gray, durationStr, reset,
 			cmd.Command))
 	}
 	output.WriteString(fmt.Sprintf("%s╰─%s\n\n", lightBlue, reset))
@@ -455,6 +667,162 @@ func handleStats(db *database.DB) (string, error) {
 	return output.String(), nil
 }
 
+func handleAlias(args []string, db *database.DB) (string, error) {
+	lightBlue := "\033[38;2;93;173;226m"
+	cyan := "\033[38;2;0;209;255m"
+	green := "\033[38;2;100;255;100m"
+	red := "\033[38;2;255;100;100m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
+
+	store, err := alias.NewAliasStore()
+	if err != nil {
+		return "", err
+	}
+
+	if len(args) == 0 {
+		return fmt.Sprintf("\n%sUsage:%s mako alias <save|list|delete|run> [args]\n\n", lightBlue, reset), nil
+	}
+
+	subcommand := args[0]
+
+	switch subcommand {
+	case "save":
+		if len(args) < 3 {
+			return fmt.Sprintf("\n%sUsage:%s mako alias save <name> <command>\n\n", lightBlue, reset), nil
+		}
+		name := args[1]
+		command := strings.Join(args[2:], " ")
+
+		if err := store.Set(name, command); err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("\n%s✓ Saved alias '%s':%s %s\n\n", green, name, reset, command), nil
+
+	case "list":
+		aliases := store.List()
+		if len(aliases) == 0 {
+			return fmt.Sprintf("\n%sNo aliases saved yet%s\n\n", dimBlue, reset), nil
+		}
+
+		var output strings.Builder
+		output.WriteString(fmt.Sprintf("\n%s╭─ Saved Aliases%s\n", lightBlue, reset))
+		for name, command := range aliases {
+			output.WriteString(fmt.Sprintf("%s│%s  %s%s%s → %s\n",
+				lightBlue, reset,
+				cyan, name, reset,
+				command))
+		}
+		output.WriteString(fmt.Sprintf("%s╰─%s\n\n", lightBlue, reset))
+		return output.String(), nil
+
+	case "delete":
+		if len(args) < 2 {
+			return fmt.Sprintf("\n%sUsage:%s mako alias delete <name>\n\n", lightBlue, reset), nil
+		}
+		name := args[1]
+
+		if err := store.Delete(name); err != nil {
+			return fmt.Sprintf("\n%s✗ %v%s\n\n", red, err, reset), nil
+		}
+
+		return fmt.Sprintf("\n%s✓ Deleted alias '%s'%s\n\n", green, name, reset), nil
+
+	case "run":
+		if len(args) < 2 {
+			return fmt.Sprintf("\n%sUsage:%s mako alias run <name>\n\n", lightBlue, reset), nil
+		}
+		name := args[1]
+
+		command, ok := store.Get(name)
+		if !ok {
+			return fmt.Sprintf("\n%s✗ Alias '%s' not found%s\n\n", red, name, reset), nil
+		}
+
+		// Execute the aliased command
+		tty, _ := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
+		if tty != nil {
+			defer tty.Close()
+		}
+		writeTTY := func(s string) {
+			if tty != nil {
+				fmt.Fprint(tty, s)
+			}
+		}
+
+		writeTTY(fmt.Sprintf("\r\n%s╭─ Running Alias '%s'%s\r\n", lightBlue, name, reset))
+		writeTTY(fmt.Sprintf("%s│%s  %s%s%s\r\n", lightBlue, reset, cyan, command, reset))
+		writeTTY(fmt.Sprintf("%s╰─%s\r\n\r\n", lightBlue, reset))
+
+		cmd := exec.Command("bash", "-c", command)
+		cmd.Stdin = os.Stdin
+
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+
+		startTime := time.Now()
+		execErr := cmd.Run()
+		duration := time.Since(startTime).Milliseconds()
+
+		// Output with proper line endings
+		if stdout.Len() > 0 {
+			output := stdout.String()
+			output = strings.ReplaceAll(output, "\n", "\r\n")
+			writeTTY(output)
+		}
+		if stderr.Len() > 0 {
+			errOutput := stderr.String()
+			errOutput = strings.ReplaceAll(errOutput, "\n", "\r\n")
+			writeTTY(errOutput)
+		}
+
+		// Save to database
+		if db != nil {
+			workingDir, _ := os.Getwd()
+			exitCode := 0
+			if execErr != nil {
+				if exitErr, ok := execErr.(*exec.ExitError); ok {
+					exitCode = exitErr.ExitCode()
+				} else {
+					exitCode = 1
+				}
+			}
+
+			safeCommand := validator.RedactSecrets(command)
+
+			embedService, _ := ai.NewEmbeddingService()
+			var embeddingBytes []byte
+			if embedService != nil {
+				vec, embedErr := embedService.Embed(safeCommand)
+				if embedErr == nil {
+					embeddingBytes = ai.VectorToBytes(vec)
+				}
+			}
+
+			db.SaveCommand(database.Command{
+				Command:    safeCommand,
+				Timestamp:  time.Now(),
+				ExitCode:   exitCode,
+				Duration:   duration,
+				WorkingDir: workingDir,
+				Embedding:  embeddingBytes,
+			})
+		}
+
+		if execErr != nil {
+			writeTTY(fmt.Sprintf("\r\n%s✗ Command failed%s\r\n\r\n", red, reset))
+		} else {
+			writeTTY(fmt.Sprintf("\r\n%s✓ Command executed successfully%s\r\n\r\n", green, reset))
+		}
+		return "", nil
+
+	default:
+		return fmt.Sprintf("\n%sUnknown alias subcommand: %s%s\n\n", red, subcommand, reset), nil
+	}
+}
+
 func getHelpText() string {
 	lightBlue := "\033[38;2;93;173;226m"
 	cyan := "\033[38;2;0;209;255m"
@@ -467,6 +835,10 @@ func getHelpText() string {
 %s│%s  %smako history%s                     Show recent commands
 %s│%s  %smako history <keyword>%s           Search by keyword
 %s│%s  %smako history semantic <query>%s    Search by meaning
+%s│%s  %smako alias save <name> <cmd>%s     Save a command alias
+%s│%s  %smako alias list%s                  List all saved aliases
+%s│%s  %smako alias run <name>%s            Run a saved alias
+%s│%s  %smako alias delete <name>%s         Delete an alias
 %s│%s  %smako stats%s                       Show statistics
 %s│%s  %smako help%s                        Show this help
 %s│%s  %smako version%s                     Show Mako version
@@ -475,6 +847,10 @@ func getHelpText() string {
 
 `, lightBlue, reset,
 		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,

@@ -102,20 +102,27 @@ mako help
 
 ## Project Status
 
-**Current Version**: v0.1.3
+**Current Version**: v0.2.0
 
-**Completed Features** (Weeks 1-5):
+**Completed Features** (Weeks 1-8):
 - ✅ PTY-based shell wrapper
 - ✅ AI command generation
 - ✅ Command history with embeddings
 - ✅ Full-text and semantic search
 - ✅ Interactive menu system
+- ✅ Context-aware suggestions (using recent terminal output)
+- ✅ Safety guardrails (dangerous command detection)
+- ✅ Error autopsy (auto-explain failed commands)
+- ✅ Secret redaction from history
+- ✅ **NEW: Command explanation** (Week 8)
+- ✅ **NEW: Edit before running** (Week 8)
+- ✅ **NEW: Alias system** (Week 8)
+- ✅ **NEW: Enhanced history display** (Week 8)
 
-**Planned** (Week 6+):
-- 🔄 Context-aware suggestions (using recent terminal output)
-- 🔄 Safety guardrails (dangerous command detection)
-- 🔄 Error autopsy (auto-explain failed commands)
-- 🔄 Secret redaction from history
+**Future Enhancements**:
+- 🔄 Advanced alias features (parameters, categories)
+- 🔄 Interactive history browser
+- 🔄 Command suggestions based on context
 
 ## Tech Stack
 
