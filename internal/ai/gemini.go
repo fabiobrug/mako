@@ -30,7 +30,12 @@ func NewGeminiClient() (*GeminiClient, error) {
 }
 
 func (g *GeminiClient) GenerateCommand(userRequest string, context SystemContext) (string, error) {
-	prompt := g.buildPrompt(userRequest, context)
+	return g.GenerateCommandWithConversation(userRequest, context, nil)
+}
+
+// GenerateCommandWithConversation generates a command with conversation context
+func (g *GeminiClient) GenerateCommandWithConversation(userRequest string, context SystemContext, conversation *ConversationHistory) (string, error) {
+	prompt := g.buildPromptWithConversation(userRequest, context, conversation)
 
 	requestBody := map[string]interface{}{
 		"contents": []map[string]interface{}{
@@ -98,9 +103,31 @@ func (g *GeminiClient) GenerateCommand(userRequest string, context SystemContext
 	return command, nil
 }
 
-func (g *GeminiClient) buildPrompt(userRequest string, context SystemContext) string {
+func (g *GeminiClient) buildPromptWithConversation(userRequest string, context SystemContext, conversation *ConversationHistory) string {
 	var promptBuild strings.Builder
 
+	// Include conversation history if available
+	if conversation != nil && conversation.IsActive() {
+		promptBuild.WriteString(conversation.GetContext())
+	}
+
+	// Include user preferences if available
+	if context.Preferences != nil {
+		prefHints := context.Preferences.GetPreferenceHints()
+		if prefHints != "" {
+			promptBuild.WriteString(prefHints)
+		}
+	}
+
+	return g.buildPromptCore(userRequest, context, &promptBuild)
+}
+
+func (g *GeminiClient) buildPrompt(userRequest string, context SystemContext) string {
+	var promptBuild strings.Builder
+	return g.buildPromptCore(userRequest, context, &promptBuild)
+}
+
+func (g *GeminiClient) buildPromptCore(userRequest string, context SystemContext, promptBuild *strings.Builder) string {
 	promptBuild.WriteString("You are a shell command generator. Your ONLY job is to output a single shell command.\n\n")
 	promptBuild.WriteString("RULES:\n")
 	promptBuild.WriteString("- Output ONLY the command, nothing else\n")
@@ -111,6 +138,25 @@ func (g *GeminiClient) buildPrompt(userRequest string, context SystemContext) st
 	promptBuild.WriteString(fmt.Sprintf("System: %s\n", context.OS))
 	promptBuild.WriteString(fmt.Sprintf("Shell: %s\n", context.Shell))
 	promptBuild.WriteString(fmt.Sprintf("Current directory: %s\n", context.CurrentDir))
+
+	// NEW: Include project context for smart suggestions
+	if context.Project != nil {
+		projectHint := context.Project.GetProjectHint()
+		if projectHint != "" {
+			promptBuild.WriteString(fmt.Sprintf("Project type: %s\n", projectHint))
+		}
+
+		// Give AI specific hints about available commands
+		if context.Project.TestCmd != "" {
+			promptBuild.WriteString(fmt.Sprintf("Test command: %s\n", context.Project.TestCmd))
+		}
+		if context.Project.BuildCmd != "" {
+			promptBuild.WriteString(fmt.Sprintf("Build command: %s\n", context.Project.BuildCmd))
+		}
+		if context.Project.RunCmd != "" {
+			promptBuild.WriteString(fmt.Sprintf("Run command: %s\n", context.Project.RunCmd))
+		}
+	}
 
 	// NEW: Include files in current directory
 	if len(context.WorkingFiles) > 0 {
@@ -157,7 +203,25 @@ func (g *GeminiClient) buildPrompt(userRequest string, context SystemContext) st
 
 	promptBuild.WriteString("\nUser request: ")
 	promptBuild.WriteString(userRequest)
-	promptBuild.WriteString("\n\nGenerate ONLY the shell command. No markdown, no backticks, no explanations. Just the raw command.")
+	promptBuild.WriteString("\n\n")
+
+	// NEW: Enhanced guidance for command composition
+	promptBuild.WriteString("COMMAND COMPOSITION GUIDE:\n")
+	promptBuild.WriteString("- Use pipes (|) to chain commands: cmd1 | cmd2\n")
+	promptBuild.WriteString("- Use && for sequential execution: cmd1 && cmd2 (only run cmd2 if cmd1 succeeds)\n")
+	promptBuild.WriteString("- Use || for alternatives: cmd1 || cmd2 (run cmd2 only if cmd1 fails)\n")
+	promptBuild.WriteString("- Use ; for unconditional sequence: cmd1 ; cmd2 (always run both)\n")
+	promptBuild.WriteString("- Combine multiple operations when needed for complex tasks\n")
+	promptBuild.WriteString("- For filtering/processing: grep, awk, sed, sort, uniq, head, tail\n")
+	promptBuild.WriteString("- For monitoring: watch, tail -f\n\n")
+
+	promptBuild.WriteString("EXAMPLES:\n")
+	promptBuild.WriteString("- Find errors and count: grep ERROR log.txt | wc -l\n")
+	promptBuild.WriteString("- Find, count, show top 10: grep ERROR *.log | sort | uniq -c | sort -rn | head -10\n")
+	promptBuild.WriteString("- Build and run: make build && ./app\n")
+	promptBuild.WriteString("- Try command or fallback: command -v docker || echo \"Docker not installed\"\n\n")
+
+	promptBuild.WriteString("Generate ONLY the shell command. No markdown, no backticks, no explanations. Just the raw command.")
 
 	return promptBuild.String()
 }

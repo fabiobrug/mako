@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"github.com/fabiobrug/mako.git/internal/context"
 )
 
 type SystemContext struct {
@@ -14,6 +16,8 @@ type SystemContext struct {
 	RecentOutput   []string
 	RecentCommands []string
 	WorkingFiles   []string
+	Project        *context.ProjectType      // NEW: Detected project type
+	Preferences    *PersonalizationStore     // NEW: User preferences
 }
 
 func GetSystemContext(recentOutput []string) SystemContext {
@@ -22,9 +26,16 @@ func GetSystemContext(recentOutput []string) SystemContext {
 		Shell:        getShellName(),
 		CurrentDir:   getCurrentDir(),
 		RecentOutput: recentOutput,
+		Project:      context.DetectProjectType(), // NEW: Detect project type
 	}
 
 	ctx.WorkingFiles = detectWorkingFiles()
+
+	// Load user preferences
+	prefs, err := LoadPreferences()
+	if err == nil {
+		ctx.Preferences = prefs
+	}
 
 	return ctx
 }

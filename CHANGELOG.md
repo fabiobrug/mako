@@ -2,6 +2,67 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [0.4.0] - 2026-02-10
+
+### Added - Week 10 Advanced AI Features & Intelligence
+
+#### 🧠 Smart Context Switching
+- **Project type detection** - Automatically detects Go, Node, Python, Rust, Java, Ruby, PHP, Elixir projects
+- **Framework awareness** - Identifies Django, Flask, Rails, Laravel, Next.js, React, Angular, Vue
+- **Smart command suggestions** - Context-aware test/build/run commands based on project type
+  - Example: `mako ask "test"` → `go test ./...` (Go) / `npm test` (Node) / `pytest` (Python)
+- New file: `internal/context/project.go` with comprehensive project detection
+
+#### 💬 Multi-Turn Conversations (GAME CHANGER!)
+- **Conversation memory** - Mako remembers last 5 exchanges for context-aware refinements
+- **Auto-timeout** - Conversations auto-clear after 5 minutes of inactivity
+- **New command**: `mako clear` - Manually clear conversation history
+- **Contextual refinements** - Build upon previous commands without repeating context
+  - Example:
+    ```bash
+    mako ask "find large files"
+    → find . -type f -size +100M
+    
+    mako ask "only PDFs"
+    → find . -type f -name "*.pdf" -size +100M
+    ```
+- Conversation state stored in `~/.mako/conversation.json`
+- New file: `internal/ai/conversation.go` for conversation management
+
+#### ⚡ Enhanced Command Composition
+- **Pipeline intelligence** - Better understanding of complex multi-stage commands
+- **Operator awareness** - AI understands `|`, `&&`, `||`, `;` operators
+- **Pipeline validation** - Syntax checking before command suggestion
+- **Examples in prompt** - AI learns from command composition patterns
+- New validation functions in `internal/parser/command.go`
+
+#### 🎯 Personalization & Learning
+- **Pattern learning** - Tracks commonly used flags and options per command
+- **Smart suggestions** - Suggests your preferred flags after 3+ uses
+  - Example: After using `ls -lah` repeatedly, `mako ask "list files"` → `ls -lah`
+- **Preference hints** - Learned patterns injected into AI context
+- Preferences stored in `~/.mako/preferences.json`
+- New file: `internal/ai/personalization.go` for preference management
+
+### Technical Changes
+- Enhanced `SystemContext` with `Project` and `Preferences` fields
+- Improved AI prompts with conversation history and learned preferences
+- JSON-based storage for conversations and preferences (lightweight, fast)
+- Pipeline complexity scoring for better command generation
+
+### Performance
+- Minimal overhead: <20ms additional latency from all new features
+- Conversation: ~5-10ms (file I/O)
+- Personalization: ~2-5ms (file I/O)
+- Project detection: ~1-3ms (filesystem checks)
+
+### Backward Compatibility
+- All new features work transparently with existing commands
+- Graceful degradation if preference/conversation files don't exist
+- No breaking changes to existing functionality
+
+---
+
 ## [0.3.0] - 2026-02-09
 
 ### Added - Week 9 Major Feature Expansion

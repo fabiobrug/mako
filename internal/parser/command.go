@@ -76,3 +76,96 @@ func IsIgnoredCommand(cmd string) bool {
 
 	return false
 }
+
+// ValidatePipeline checks if a command pipeline is syntactically valid
+func ValidatePipeline(command string) bool {
+	// Basic validation rules:
+	// 1. Should not start or end with pipe operators
+	// 2. Should not have consecutive operators without commands
+	// 3. Should have balanced quotes
+
+	trimmed := strings.TrimSpace(command)
+	if trimmed == "" {
+		return false
+	}
+
+	// Check for operators at start/end
+	invalidStarts := []string{"|", "&&", "||", ";"}
+	for _, op := range invalidStarts {
+		if strings.HasPrefix(trimmed, op) || strings.HasSuffix(trimmed, op) {
+			return false
+		}
+	}
+
+	// Check for consecutive pipes/operators
+	invalidPatterns := []string{"||", "| |", "| &&", "&& |", "; |"}
+	for _, pattern := range invalidPatterns {
+		if strings.Contains(trimmed, pattern) {
+			return false
+		}
+	}
+
+	// Check balanced quotes
+	if !hasBalancedQuotes(trimmed) {
+		return false
+	}
+
+	return true
+}
+
+// hasBalancedQuotes checks if quotes are balanced
+func hasBalancedQuotes(s string) bool {
+	singleQuotes := 0
+	doubleQuotes := 0
+	escaped := false
+
+	for _, char := range s {
+		if escaped {
+			escaped = false
+			continue
+		}
+
+		switch char {
+		case '\\':
+			escaped = true
+		case '\'':
+			singleQuotes++
+		case '"':
+			doubleQuotes++
+		}
+	}
+
+	return singleQuotes%2 == 0 && doubleQuotes%2 == 0
+}
+
+// IsPipeline checks if a command contains pipeline operators
+func IsPipeline(command string) bool {
+	pipelineOperators := []string{"|", "&&", "||", ";"}
+	for _, op := range pipelineOperators {
+		if strings.Contains(command, op) {
+			return true
+		}
+	}
+	return false
+}
+
+// GetPipelineComplexity returns a score for how complex the pipeline is
+func GetPipelineComplexity(command string) int {
+	complexity := 0
+	
+	// Count pipe operators
+	complexity += strings.Count(command, "|")
+	
+	// Count boolean operators
+	complexity += strings.Count(command, "&&")
+	complexity += strings.Count(command, "||")
+	
+	// Count semicolons
+	complexity += strings.Count(command, ";")
+	
+	// Bonus for nested commands (subshells)
+	complexity += strings.Count(command, "$(")
+	complexity += strings.Count(command, "`")
+	
+	return complexity
+}

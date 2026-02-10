@@ -138,6 +138,9 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 			return true, fmt.Sprintf("v0.3.0\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
+		case "clear":
+			output, err := handleClear()
+			return true, output, err
 		default:
 			return true, fmt.Sprintf("Unknown mako command: %s\n", parts[1]), nil
 		}
@@ -150,6 +153,14 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	client, err := ai.NewGeminiClient()
 	if err != nil {
 		return "", err
+	}
+
+	// Load conversation history
+	conversation, err := ai.LoadConversation()
+	if err != nil {
+		// Log error but continue without conversation
+		fmt.Fprintf(os.Stderr, "Warning: Failed to load conversation: %v\n", err)
+		conversation = nil
 	}
 
 	// ENHANCED: Get recent output and commands for context
@@ -171,7 +182,8 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	// Build enhanced context
 	context := ai.GetEnhancedContext(recentOutput, recentCommands)
 
-	command, err := client.GenerateCommand(query, context)
+	// Generate command with conversation history
+	command, err := client.GenerateCommandWithConversation(query, context, conversation)
 	if err != nil {
 		return "", err
 	}
@@ -390,6 +402,23 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		} else {
 			writeTTY(fmt.Sprintf("\r\n%s✓ Command executed successfully%s\r\n\r\n", green, reset))
 		}
+
+		// Save conversation turn
+		if conversation != nil {
+			conversation.AddTurn(query, command, true)
+			if err := conversation.Save(); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to save conversation: %v\n", err)
+			}
+		}
+
+		// Learn from executed command
+		if context.Preferences != nil {
+			context.Preferences.LearnFromCommand(command)
+			if err := context.Preferences.Save(); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to save preferences: %v\n", err)
+			}
+		}
+
 		return "", nil
 
 	case "explain":
@@ -540,10 +569,28 @@ func handleAsk(query string, db *database.DB) (string, error) {
 		} else {
 			writeTTY(fmt.Sprintf("\r\n%s✗ Failed to copy to clipboard%s\r\n\r\n", red, reset))
 		}
+		
+		// Save conversation turn (but mark as not executed since only copied)
+		if conversation != nil {
+			conversation.AddTurn(query, command, false)
+			if err := conversation.Save(); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to save conversation: %v\n", err)
+			}
+		}
+		
 		return "", nil
 
 	case "cancel":
 		writeTTY(fmt.Sprintf("\r\n%sℹ Cancelled%s\r\n\r\n", gray, reset))
+		
+		// Still save the conversation turn (but mark as not executed)
+		if conversation != nil {
+			conversation.AddTurn(query, command, false)
+			if err := conversation.Save(); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to save conversation: %v\n", err)
+			}
+		}
+		
 		return "", nil
 
 	default:
@@ -1059,6 +1106,17 @@ func handleStats(db *database.DB) (string, error) {
 	return output.String(), nil
 }
 
+func handleClear() (string, error) {
+	green := "\033[38;2;100;255;100m"
+	reset := "\033[0m"
+	
+	if err := ai.ClearConversation(); err != nil {
+		return "", fmt.Errorf("failed to clear conversation: %w", err)
+	}
+	
+	return fmt.Sprintf("\n%s✓ Conversation history cleared%s\n\n", green, reset), nil
+}
+
 func handleAlias(args []string, db *database.DB) (string, error) {
 	lightBlue := "\033[38;2;93;173;226m"
 	cyan := "\033[38;2;0;209;255m"
@@ -1345,6 +1403,7 @@ func getHelpText() string {
 %s│%s  %smako alias import <file>%s         Import aliases from file
 %s│%s  
 %s│%s  %smako stats%s                       Show statistics
+%s│%s  %smako clear%s                       Clear conversation history
 %s│%s  %smako help%s                        Show this help
 %s│%s  %smako version%s                     Show Mako version
 %s│%s 
@@ -1368,6 +1427,7 @@ func getHelpText() string {
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
