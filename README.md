@@ -1,59 +1,71 @@
-# Mako - AI-Native Shell Orchestrator
+# Mako — AI-Native Shell Orchestrator
 
 <p align="center">
   <strong>Transform your terminal with AI-powered command assistance</strong>
 </p>
 
 <p align="center">
+  <a href="https://github.com/fabiobrug/mako/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/fabiobrug/mako/test.yml?branch=dev&style=for-the-badge" alt="CI status"></a>
   <a href="https://github.com/fabiobrug/mako/releases"><img src="https://img.shields.io/github/v/release/fabiobrug/mako?include_prereleases&style=for-the-badge" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
-  <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21-00ADD8?style=for-the-badge&logo=go" alt="Go version"></a>
+  <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go" alt="Go version"></a>
 </p>
 
-**Mako** is an AI-native shell orchestrator that wraps around your existing shell (bash/zsh) to provide intelligent command assistance. Generate commands from natural language, search your history semantically with vector embeddings, and work faster with an AI that learns your preferences and understands context.
+**Mako** is an AI-native shell orchestrator that wraps around your existing shell (bash/zsh) to provide intelligent command assistance. Generate commands from natural language, search your history semantically, and work faster with an AI that learns your preferences and understands context.
 
-The tool intercepts terminal I/O through a PTY (pseudo-terminal) and routes commands to Google Gemini for natural language processing, while maintaining a high-performance searchable history with async embedding generation and LRU caching.
+[Quick Start](#quick-start) · [Installation](#installation) · [Features](#features) · [Documentation](#getting-help) · [Contributing](#contributing)
 
-## Quick Start
-
-Runtime: **Go 1.21**
+Preferred setup: one-line install script. Works on **Linux and macOS**.
 
 ```bash
-# Clone and build
-git clone https://github.com/fabiobrug/mako.git
-cd mako
+curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
+```
 
-# Set up API key
-echo "GEMINI_API_KEY=your_api_key_here" > .env
+## Install (recommended)
 
-# Build binaries (fts5 tag required for full-text search)
-go build -tags "fts5" -o mako cmd/mako/main.go
-go build -o mako-menu cmd/mako-menu/main.go
+Runtime: **Go 1.21+**
+
+```bash
+# One-line install
+curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
 
 # Start Mako
-./mako
-
-# Inside Mako shell
-mako ask "find files larger than 100MB"
-mako history --interactive
-mako health
-mako stats
+mako
 ```
 
 Get your Gemini API key: [Google AI Studio](https://ai.google.dev/)
 
-## What's New in v1.0.0 🎉
+## Quick start (TL;DR)
 
-**First Stable Release - Production Ready!**
+```bash
+# Start Mako shell
+mako
 
-Week 12 brought professional distribution and ease of use:
-- **One-Command Install**: `curl -sSL https://get-mako.sh | bash`
-- **Auto-Updates**: Stay current with `mako update`
-- **Configuration**: Easy setup with `mako config`
-- **Professional Docs**: Man page, installation guide, shell completions
-- **Package Managers**: Homebrew support for easy installation
+# Inside Mako shell, use natural language
+mako ask "find files larger than 100MB"
+mako ask "compress this video"
 
-Plus all the powerful features from Weeks 1-11:
+# Search history semantically
+mako history semantic "backup database"
+
+# Browse history interactively
+mako history --interactive
+
+# Check system health
+mako health
+```
+
+## What's New in v1.0.0
+
+**🎉 First Stable Release - Production Ready!**
+
+- **One-line install**: `curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash`
+- **Auto-updates**: Stay current with `mako update`
+- **Configuration system**: Easy setup with `mako config`
+- **Professional docs**: Man page (`man mako`), installation guide, shell completions
+- **CI/CD**: Automated testing and releases via GitHub Actions
+
+Core features:
 - AI-powered command generation from natural language
 - Semantic history search with vector embeddings
 - Async embedding generation (20x faster saves)
@@ -209,41 +221,45 @@ $ mako history semantic "compress video"
 # Find commands by meaning, not exact text
 ```
 
-## Installation
+## Installation options
 
-### Prerequisites
+### Option 1: Install script (recommended)
 
-- Go 1.25.6 or higher
-- SQLite3 with FTS5 support
-- Gemini API key from [Google AI Studio](https://ai.google.dev/)
+```bash
+curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
+```
 
-### From Source
+The installer:
+- Auto-detects your OS (Linux/macOS) and architecture
+- Downloads pre-built binaries from GitHub releases
+- Installs to `/usr/local/bin` (or `~/.local/bin` without sudo)
+- Prompts for your Gemini API key
+- Sets up shell completions
+
+### Option 2: From source
+
+Runtime: **Go 1.21+**
 
 ```bash
 git clone https://github.com/fabiobrug/mako.git
 cd mako
 
-# Set up environment variables
-cat > .env <<EOF
-GEMINI_API_KEY=your_api_key_here
-EOF
+# Set up API key
+echo "GEMINI_API_KEY=your_api_key_here" > .env
 
-# Build with FTS5 tag (required for full-text search)
-go build -tags "fts5" -o mako cmd/mako/main.go
-
-# Build menu binary (required for interactive menus)
-go build -o mako-menu cmd/mako-menu/main.go
+# Build binaries (fts5 tag required)
+go build -tags "fts5" -o mako ./cmd/mako
+go build -o mako-menu ./cmd/mako-menu
 
 # Run
 ./mako
 ```
 
-### Build Requirements
+### Prerequisites
 
-- The main binary requires the `fts5` build tag for SQLite full-text search
-- The menu binary (`mako-menu`) must be in the same directory as `mako`
-- Both binaries are required for full functionality
-- Database automatically migrates on first run for existing installations
+- Go 1.21+ (for building from source)
+- SQLite3 with FTS5 support
+- Gemini API key from [Google AI Studio](https://ai.google.dev/)
 
 ## Architecture
 
@@ -341,42 +357,32 @@ The database automatically migrates to the latest schema on startup:
 - Sync metadata for incremental bash history sync
 - Optimized indexes for performance at scale
 
-## Technology Stack
+## Technology stack
 
-### Core Technologies
-
-- **Language**: Go 1.25.6
+- **Language**: Go 1.21+
 - **AI Provider**: Google Gemini API
-  - `gemini-2.5-flash` for command generation, explanations, and error analysis
-  - `text-embedding-004` for semantic search with 768-dimensional vectors
-- **Database**: SQLite with FTS5 extension for hybrid search
+  - `gemini-2.0-flash-exp` for command generation
+  - `text-embedding-004` for semantic search (768-dimensional vectors)
+- **Database**: SQLite with FTS5 for hybrid search
 - **Terminal**: PTY via `creack/pty`
 
-### Key Dependencies
+Key dependencies:
+- `creack/pty` — PTY handling
+- `mattn/go-sqlite3` — SQLite driver with FTS5
+- `atotto/clipboard` — Clipboard operations
+- `joho/godotenv` — Environment management
 
-- `creack/pty` v1.1.24 - PTY (pseudo-terminal) handling
-- `mattn/go-sqlite3` v1.14.33 - SQLite driver with FTS5
-- `atotto/clipboard` v0.1.4 - Clipboard operations
-- `joho/godotenv` v1.5.1 - Environment variable management
-- `golang.org/x/term` v0.39.0 - Terminal control
-
-Full dependency list: `go.mod`
-
-### Build Command
-
+Build command:
 ```bash
-go build -tags "fts5" -o mako cmd/mako/main.go
+go build -tags "fts5" -o mako ./cmd/mako
 ```
 
-The `fts5` tag enables SQLite full-text search capabilities for hybrid FTS5 + vector search.
-
-### Performance Characteristics
-
-- **Command save**: <10ms (async embedding generation)
-- **Semantic search**: <100ms (100k+ commands with two-phase FTS5 filtering)
-- **Cache hit rate**: 80%+ (typical usage with LRU cache)
-- **Database size**: 30-50% reduction with deduplication
-- **Startup time**: <100ms with cache preloading
+Performance:
+- Command save: <10ms (async embedding)
+- Semantic search: <100ms (100k+ commands)
+- Cache hit rate: 80%+ (LRU cache)
+- Database: 30-50% smaller (deduplication)
+- Startup: <100ms (with cache)
 
 ## Development Status
 
@@ -493,11 +499,18 @@ Mako handles terminal output carefully to ensure proper display:
 
 See `.cursorrules` for detailed terminal handling guidelines.
 
-## Getting Help
+## Documentation
 
-- **Documentation**: See [CHANGELOG.md](CHANGELOG.md) for detailed feature documentation
-- **Issues**: Open an issue on [GitHub](https://github.com/fabiobrug/mako/issues)
+- [Installation Guide](docs/INSTALL.md) — Detailed installation instructions
+- [Quick Start Guide](docs/QUICK_START.md) — Get up and running quickly
+- [CHANGELOG](CHANGELOG.md) — Full feature documentation and version history
+- [Contributing Guide](docs/CONTRIBUTING.md) — How to contribute to Mako
+- [Man Page](docs/man/mako.1) — Complete command reference
+
+## Getting help
+
 - **Health Check**: Run `mako health` to diagnose common problems
+- **Issues**: Open an issue on [GitHub](https://github.com/fabiobrug/mako/issues)
 - **Debugging**: Check `~/.mako/` directory for logs and state files
 
 ## Contributing
@@ -598,14 +611,20 @@ Mako automatically redacts:
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Author
+## Community
+
+Mako is built for developers who want AI-powered command assistance without leaving the terminal.
 
 Created by [Fabio Brug](https://github.com/fabiobrug)
 
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines on how to submit PRs.
+
 ## Acknowledgments
 
-- Built with [Google Gemini API](https://ai.google.dev/) for AI-powered command generation and semantic embeddings
-- Terminal handling via [creack/pty](https://github.com/creack/pty)
-- Database powered by SQLite with FTS5 full-text search
-- Clipboard integration via [atotto/clipboard](https://github.com/atotto/clipboard)
-- Inspired by the need for better command-line AI integration with high performance at scale
+Special thanks to:
+- [Google Gemini API](https://ai.google.dev/) for AI-powered command generation and semantic embeddings
+- [creack/pty](https://github.com/creack/pty) for terminal handling
+- SQLite with FTS5 for high-performance search
+- [atotto/clipboard](https://github.com/atotto/clipboard) for clipboard integration
+
+Thanks to all contributors who helped make Mako better!
