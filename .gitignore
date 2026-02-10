@@ -3,9 +3,9 @@
 .env.local
 .env.*.local
 
-# Binaries
-mako
-mako-menu
+# Binaries (root only; do not ignore cmd/mako/ source)
+/mako
+/mako-menu
 /mako-*
 /dist/
 *.exe
