@@ -80,6 +80,16 @@ func (e *EmbeddingService) Embed(text string) ([]float32, error) {
 	return response.Embedding.Values, nil
 }
 
+// GenerateEmbedding generates an embedding and returns it as bytes
+// This method satisfies the database.EmbeddingService interface
+func (e *EmbeddingService) GenerateEmbedding(text string) ([]byte, error) {
+	vec, err := e.Embed(text)
+	if err != nil {
+		return nil, err
+	}
+	return VectorToBytes(vec), nil
+}
+
 func VectorToBytes(vec []float32) []byte {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, vec)

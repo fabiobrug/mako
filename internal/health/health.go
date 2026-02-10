@@ -1,0 +1,317 @@
+package health
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/fabiobrug/mako.git/internal/cache"
+	"github.com/fabiobrug/mako.git/internal/database"
+)
+
+// HealthStatus represents the health status of a component
+type HealthStatus string
+
+const (
+	StatusOK      HealthStatus = "OK"
+	StatusWarning HealthStatus = "WARNING"
+	StatusError   HealthStatus = "ERROR"
+)
+
+// ComponentHealth represents health of a single component
+type ComponentHealth struct {
+	Name    string
+	Status  HealthStatus
+	Message string
+	Details map[string]interface{}
+}
+
+// HealthReport contains overall health information
+type HealthReport struct {
+	Components   []ComponentHealth
+	Suggestions  []string
+	OverallOK    bool
+}
+
+// Checker performs health checks
+type Checker struct {
+	db           *database.DB
+	embeddingCache *cache.EmbeddingCache
+	apiKey       string
+}
+
+// NewChecker creates a new health checker
+func NewChecker(db *database.DB, embeddingCache *cache.EmbeddingCache, apiKey string) *Checker {
+	return &Checker{
+		db:             db,
+		embeddingCache: embeddingCache,
+		apiKey:         apiKey,
+	}
+}
+
+// Check performs all health checks
+func (c *Checker) Check() (*HealthReport, error) {
+	report := &HealthReport{
+		Components:  make([]ComponentHealth, 0),
+		Suggestions: make([]string, 0),
+		OverallOK:   true,
+	}
+
+	// Check database
+	dbHealth := c.checkDatabase()
+	report.Components = append(report.Components, dbHealth)
+	if dbHealth.Status != StatusOK {
+		report.OverallOK = false
+	}
+
+	// Check API key
+	apiHealth := c.checkAPIKey()
+	report.Components = append(report.Components, apiHealth)
+	if apiHealth.Status != StatusOK {
+		report.OverallOK = false
+	}
+
+	// Check cache
+	cacheHealth := c.checkCache()
+	report.Components = append(report.Components, cacheHealth)
+	if cacheHealth.Status == StatusError {
+		report.OverallOK = false
+	}
+
+	// Check disk space
+	diskHealth := c.checkDiskSpace()
+	report.Components = append(report.Components, diskHealth)
+	if diskHealth.Status == StatusError {
+		report.OverallOK = false
+	}
+
+	// Generate suggestions
+	report.Suggestions = c.generateSuggestions(report.Components)
+
+	return report, nil
+}
+
+// checkDatabase verifies database health
+func (c *Checker) checkDatabase() ComponentHealth {
+	health := ComponentHealth{
+		Name:    "Database",
+		Details: make(map[string]interface{}),
+	}
+
+	// Get command count
+	count, err := c.db.GetCommandCount()
+	if err != nil {
+		health.Status = StatusError
+		health.Message = fmt.Sprintf("Failed to query database: %v", err)
+		return health
+	}
+	health.Details["command_count"] = count
+
+	// Get database size
+	size, err := c.db.GetDatabaseSize()
+	if err != nil {
+		health.Status = StatusWarning
+		health.Message = "Could not determine database size"
+	} else {
+		health.Details["size_bytes"] = size
+		health.Details["size_mb"] = size / (1024 * 1024)
+	}
+
+	// Check for corruption (simple check)
+	_, err = c.db.GetRecentCommands(1)
+	if err != nil {
+		health.Status = StatusError
+		health.Message = "Database may be corrupted"
+		return health
+	}
+
+	health.Status = StatusOK
+	health.Message = fmt.Sprintf("%d commands, %d MB", count, size/(1024*1024))
+	return health
+}
+
+// checkAPIKey verifies API key is set
+func (c *Checker) checkAPIKey() ComponentHealth {
+	health := ComponentHealth{
+		Name:    "API Key",
+		Details: make(map[string]interface{}),
+	}
+
+	if c.apiKey == "" {
+		health.Status = StatusError
+		health.Message = "GEMINI_API_KEY not set"
+		return health
+	}
+
+	// Basic validation (not a real API call to save quota)
+	if len(c.apiKey) < 20 {
+		health.Status = StatusWarning
+		health.Message = "API key looks invalid (too short)"
+	} else {
+		health.Status = StatusOK
+		health.Message = "Valid (not verified with API)"
+		health.Details["key_length"] = len(c.apiKey)
+	}
+
+	return health
+}
+
+// checkCache verifies embedding cache performance
+func (c *Checker) checkCache() ComponentHealth {
+	health := ComponentHealth{
+		Name:    "Cache",
+		Details: make(map[string]interface{}),
+	}
+
+	if c.embeddingCache == nil {
+		health.Status = StatusWarning
+		health.Message = "Cache not initialized"
+		return health
+	}
+
+	stats := c.embeddingCache.Stats()
+	health.Details["size"] = stats.Size
+	health.Details["max_size"] = stats.MaxSize
+	health.Details["hits"] = stats.Hits
+	health.Details["misses"] = stats.Misses
+	health.Details["hit_rate"] = fmt.Sprintf("%.1f%%", stats.HitRate*100)
+	health.Details["memory_mb"] = stats.MemoryUsed / (1024 * 1024)
+
+	// Evaluate cache performance
+	if stats.HitRate < 0.4 && stats.Hits+stats.Misses > 100 {
+		health.Status = StatusWarning
+		health.Message = fmt.Sprintf("Low hit rate: %.1f%% (recommended: >60%%)", stats.HitRate*100)
+	} else if stats.HitRate >= 0.6 || stats.Hits+stats.Misses < 100 {
+		health.Status = StatusOK
+		health.Message = fmt.Sprintf("Hit rate: %.1f%%", stats.HitRate*100)
+	} else {
+		health.Status = StatusOK
+		health.Message = fmt.Sprintf("Hit rate: %.1f%%", stats.HitRate*100)
+	}
+
+	return health
+}
+
+// checkDiskSpace verifies available disk space
+func (c *Checker) checkDiskSpace() ComponentHealth {
+	health := ComponentHealth{
+		Name:    "Disk Space",
+		Details: make(map[string]interface{}),
+	}
+
+	// Get home directory
+	home, err := os.UserHomeDir()
+	if err != nil {
+		health.Status = StatusWarning
+		health.Message = "Could not check disk space"
+		return health
+	}
+
+	makoDir := home + "/.mako"
+	
+	// Get directory size
+	var totalSize int64
+	err = os.MkdirAll(makoDir, 0755)
+	if err == nil {
+		// Walk directory and sum file sizes
+		entries, err := os.ReadDir(makoDir)
+		if err == nil {
+			for _, entry := range entries {
+				if !entry.IsDir() {
+					info, err := entry.Info()
+					if err == nil {
+						totalSize += info.Size()
+					}
+				}
+			}
+		}
+	}
+
+	sizeMB := totalSize / (1024 * 1024)
+	health.Details["size_mb"] = sizeMB
+
+	// Simple threshold check (100MB limit as mentioned in requirements)
+	const maxSizeMB = 100
+	if sizeMB > maxSizeMB {
+		health.Status = StatusWarning
+		health.Message = fmt.Sprintf("%d MB / %d MB limit exceeded", sizeMB, maxSizeMB)
+	} else {
+		health.Status = StatusOK
+		health.Message = fmt.Sprintf("%d MB / %d MB limit", sizeMB, maxSizeMB)
+	}
+
+	return health
+}
+
+// generateSuggestions creates optimization suggestions
+func (c *Checker) generateSuggestions(components []ComponentHealth) []string {
+	suggestions := make([]string, 0)
+
+	// Check cache performance
+	for _, comp := range components {
+		if comp.Name == "Cache" {
+			if hitRate, ok := comp.Details["hit_rate"].(string); ok {
+				// Parse hit rate
+				var rate float64
+				fmt.Sscanf(hitRate, "%f%%", &rate)
+				
+				if rate < 60 && comp.Details["hits"].(int64)+comp.Details["misses"].(int64) > 100 {
+					suggestions = append(suggestions, "Cache hit rate is low - consider increasing cache size")
+				} else if rate >= 80 {
+					suggestions = append(suggestions, "Cache is working well")
+				}
+			}
+		}
+
+		if comp.Name == "Database" {
+			if sizeMB, ok := comp.Details["size_mb"].(int64); ok {
+				if sizeMB > 200 {
+					suggestions = append(suggestions, "Consider archiving commands older than 1 year")
+				}
+			}
+
+			if count, ok := comp.Details["command_count"].(int64); ok {
+				if count > 100000 {
+					suggestions = append(suggestions, "Large command history - consider periodic cleanup")
+				}
+			}
+		}
+
+		if comp.Name == "Disk Space" {
+			if sizeMB, ok := comp.Details["size_mb"].(int64); ok {
+				if sizeMB > 80 {
+					suggestions = append(suggestions, "Approaching disk space limit - consider cleanup")
+				}
+			}
+		}
+	}
+
+	if len(suggestions) == 0 {
+		suggestions = append(suggestions, "Everything looks good!")
+	}
+
+	return suggestions
+}
+
+// FormatReport formats the health report for display
+func FormatReport(report *HealthReport) string {
+	var output string
+	output += "🦈 Mako Health Check\r\n\r\n"
+
+	for _, comp := range report.Components {
+		statusSymbol := "✓"
+		if comp.Status == StatusWarning {
+			statusSymbol = "⚠"
+		} else if comp.Status == StatusError {
+			statusSymbol = "✗"
+		}
+
+		output += fmt.Sprintf("%s %s: %s\r\n", statusSymbol, comp.Name, comp.Message)
+	}
+
+	output += "\r\nPerformance Tips:\r\n"
+	for _, suggestion := range report.Suggestions {
+		output += fmt.Sprintf("- %s\r\n", suggestion)
+	}
+
+	return output
+}

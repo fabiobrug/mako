@@ -12,7 +12,10 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/fabiobrug/mako.git/internal/ai"
 	"github.com/fabiobrug/mako.git/internal/alias"
+	"github.com/fabiobrug/mako.git/internal/cache"
 	"github.com/fabiobrug/mako.git/internal/database"
+	"github.com/fabiobrug/mako.git/internal/export"
+	"github.com/fabiobrug/mako.git/internal/health"
 	"github.com/fabiobrug/mako.git/internal/safety"
 )
 
@@ -21,9 +24,17 @@ var validator = safety.NewValidator()
 // Global reference to ring buffer (will be set from main)
 var recentOutputGetter func(int) []string
 
+// Global reference to embedding cache (will be set from main)
+var embeddingCache *cache.EmbeddingCache
+
 // SetRecentOutputGetter allows main to provide ring buffer access
 func SetRecentOutputGetter(getter func(int) []string) {
 	recentOutputGetter = getter
+}
+
+// SetEmbeddingCache allows main to provide cache access
+func SetEmbeddingCache(cache *cache.EmbeddingCache) {
+	embeddingCache = cache
 }
 
 // readLineFromTTY reads a line of input from /dev/tty with the prefilled text
@@ -140,6 +151,18 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 			return true, getSharkArt(), nil
 		case "clear":
 			output, err := handleClear()
+			return true, output, err
+		case "health":
+			output, err := handleHealth(db)
+			return true, output, err
+		case "export":
+			output, err := handleExport(parts[2:], db)
+			return true, output, err
+		case "import":
+			output, err := handleImport(parts[2:], db)
+			return true, output, err
+		case "sync":
+			output, err := handleSync(db)
 			return true, output, err
 		default:
 			return true, fmt.Sprintf("Unknown mako command: %s\n", parts[1]), nil
@@ -374,7 +397,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 
 			// Offer error explanation
 			if stderr.Len() > 0 {
-				writeTTY(fmt.Sprintf("\r\n%s Getting error explanation...%s\r\n", cyan, reset))
+				writeTTY(fmt.Sprintf("\r\n%s▸ Getting error explanation...%s\r\n", cyan, reset))
 
 				explanation, explainErr := client.ExplainError(command, stderr.String(), context)
 				if explainErr == nil && strings.TrimSpace(explanation) != "" {
@@ -765,7 +788,7 @@ func handleSemanticHistory(query string, db *database.DB, filterFailed bool, fil
 		return "", err
 	}
 	queryBytes := ai.VectorToBytes(queryVec)
-	commands, err := db.SearchCommandsSemantic(queryBytes, 10, 0.5)
+	commands, err := db.SearchCommandsSemantic(query, queryBytes, 10, 0.5)
 	if err != nil {
 		return "", err
 	}
@@ -1403,6 +1426,11 @@ func getHelpText() string {
 %s│%s  %smako alias import <file>%s         Import aliases from file
 %s│%s  
 %s│%s  %smako stats%s                       Show statistics
+%s│%s  %smako health%s                      Check Mako health and performance
+%s│%s  %smako export [--last N] > file%s    Export command history to JSON
+%s│%s  %smako import <file>%s               Import commands from JSON
+%s│%s  %smako sync%s                        Sync bash history to Mako
+%s│%s  
 %s│%s  %smako clear%s                       Clear conversation history
 %s│%s  %smako help%s                        Show this help
 %s│%s  %smako version%s                     Show Mako version
@@ -1431,8 +1459,180 @@ func getHelpText() string {
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
 		lightBlue, reset,
 		lightBlue, reset, dimBlue, reset)
+}
+
+func handleHealth(db *database.DB) (string, error) {
+	if db == nil {
+		return "\r\n✗ Database not available - cannot perform health check\r\n\r\n", nil
+	}
+	
+	// Get API key from environment
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	
+	// Create health checker
+	checker := health.NewChecker(db, embeddingCache, apiKey)
+	
+	// Run health check
+	report, err := checker.Check()
+	if err != nil {
+		return "", fmt.Errorf("health check failed: %w", err)
+	}
+	
+	// Format and return report
+	output := health.FormatReport(report)
+	return output, nil
+}
+
+func handleExport(args []string, db *database.DB) (string, error) {
+	if db == nil {
+		return "\r\n✗ Database not available\r\n\r\n", nil
+	}
+	
+	if len(args) == 0 {
+		return "Usage: mako export [--last N] [--dir /path] > output.json\r\n", nil
+	}
+	
+	opts := export.ExportOptions{}
+	
+	// Parse arguments
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--last":
+			if i+1 < len(args) {
+				fmt.Sscanf(args[i+1], "%d", &opts.Last)
+				i++
+			}
+		case "--dir":
+			if i+1 < len(args) {
+				opts.WorkingDir = args[i+1]
+				i++
+			}
+		case "--success":
+			opts.SuccessOnly = true
+		case "--failed":
+			opts.FailedOnly = true
+		}
+	}
+	
+	// Default to last 1000 if nothing specified
+	if opts.Last == 0 && opts.WorkingDir == "" && !opts.SuccessOnly && !opts.FailedOnly {
+		opts.Last = 1000
+	}
+	
+	// Create exporter
+	exporter := export.NewExporter(db)
+	
+	// Export to stdout
+	var buf bytes.Buffer
+	if err := exporter.Export(&buf, opts); err != nil {
+		return "", fmt.Errorf("export failed: %w", err)
+	}
+	
+	// Convert to proper line endings
+	output := strings.ReplaceAll(buf.String(), "\n", "\r\n")
+	return output, nil
+}
+
+func handleImport(args []string, db *database.DB) (string, error) {
+	if db == nil {
+		return "\r\n✗ Database not available\r\n\r\n", nil
+	}
+	
+	if len(args) == 0 {
+		return "Usage: mako import [--merge|--skip|--overwrite] <file.json>\r\n", nil
+	}
+	
+	opts := export.ImportOptions{
+		ConflictStrategy: export.ConflictSkip, // Default
+	}
+	
+	var filename string
+	
+	// Parse arguments
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--merge":
+			opts.ConflictStrategy = export.ConflictMerge
+		case "--skip":
+			opts.ConflictStrategy = export.ConflictSkip
+		case "--overwrite":
+			opts.ConflictStrategy = export.ConflictOverwrite
+		case "--dry-run":
+			opts.DryRun = true
+		default:
+			filename = args[i]
+		}
+	}
+	
+	if filename == "" {
+		return "Error: No file specified\r\n", nil
+	}
+	
+	// Open file
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+	
+	// Create importer
+	importer := export.NewImporter(db)
+	
+	// Import
+	result, err := importer.Import(file, opts)
+	if err != nil {
+		return "", fmt.Errorf("import failed: %w", err)
+	}
+	
+	// Format result
+	output := fmt.Sprintf("\r\nImport complete:\r\n")
+	output += fmt.Sprintf("  Total: %d\r\n", result.TotalCommands)
+	output += fmt.Sprintf("  Imported: %d\r\n", result.ImportedNew)
+	output += fmt.Sprintf("  Skipped: %d\r\n", result.Skipped)
+	output += fmt.Sprintf("  Updated: %d\r\n", result.Updated)
+	
+	if len(result.Errors) > 0 {
+		output += fmt.Sprintf("  Errors: %d\r\n", len(result.Errors))
+		for i, errMsg := range result.Errors {
+			if i < 5 { // Show first 5 errors
+				output += fmt.Sprintf("    - %s\r\n", errMsg)
+			}
+		}
+		if len(result.Errors) > 5 {
+			output += fmt.Sprintf("    ... and %d more\r\n", len(result.Errors)-5)
+		}
+	}
+	
+	return output, nil
+}
+
+func handleSync(db *database.DB) (string, error) {
+	if db == nil {
+		return "\r\n✗ Database not available\r\n\r\n", nil
+	}
+	
+	// Get default history path
+	historyPath := database.GetDefaultHistoryPath()
+	
+	if historyPath == "" {
+		return "Error: Could not find bash history file\r\n", nil
+	}
+	
+	// Sync with limit of 100 new commands
+	count, err := db.SyncBashHistory(historyPath, 100)
+	if err != nil {
+		return "", fmt.Errorf("sync failed: %w", err)
+	}
+	
+	output := fmt.Sprintf("Synced %d new commands from %s\r\n", count, historyPath)
+	return output, nil
 }
 
 func getSharkArt() string {

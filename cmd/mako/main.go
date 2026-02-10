@@ -13,6 +13,7 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/fabiobrug/mako.git/internal/ai"
+	"github.com/fabiobrug/mako.git/internal/cache"
 	"github.com/fabiobrug/mako.git/internal/database"
 	"github.com/fabiobrug/mako.git/internal/shell"
 	"github.com/fabiobrug/mako.git/internal/stream"
@@ -167,13 +168,43 @@ func runShellWrapper() {
 	db, err := database.NewDB(dbPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: Could not open database: %v\n", err)
+		db = nil // Ensure db is nil on error
 	}
+	
+	// Initialize embedding cache
+	embeddingCache := cache.NewEmbeddingCache(10000) // Max 10k entries
+	if db != nil && embeddingCache != nil {
+		// Load cache from database (ignore errors - cache might not exist yet)
+		_ = embeddingCache.Load(db.GetConn())
+	}
+	
+	// Initialize async embedding worker
+	var embeddingWorker *database.EmbeddingWorker
+	if db != nil {
+		embedService, err := ai.NewEmbeddingService()
+		if err == nil {
+			embeddingWorker = database.NewEmbeddingWorker(db, embedService, 2) // 2 workers
+			embeddingWorker.Start()
+		}
+	}
+	
 	defer func() {
 		if db != nil {
+			// Save cache to database (ignore errors)
+			if embeddingCache != nil {
+				_ = embeddingCache.Save(db.GetConn())
+			}
+			
+			// Stop async worker
+			if embeddingWorker != nil {
+				embeddingWorker.Stop()
+			}
+			
 			syncBashHistory(db)
 			db.Close()
 		}
 	}()
+	
 	interceptor := stream.NewInterceptor(500)
 	if db != nil {
 		interceptor.SetDatabase(db)
@@ -182,6 +213,9 @@ func runShellWrapper() {
 	shell.SetRecentOutputGetter(func(n int) []string {
 		return interceptor.GetRecentLines(n)
 	})
+	
+	// Set embedding cache for shell commands
+	shell.SetEmbeddingCache(embeddingCache)
 
 	fmt.Printf("\n%s▸ Mako shell ready%s\n", lightBlue, reset)
 	makoRcPath := createMakoRc()
