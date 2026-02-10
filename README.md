@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/fabiobrug/mako/releases"><img src="https://img.shields.io/github/v/release/fabiobrug/mako?include_prereleases&style=for-the-badge" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
-  <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.25.6-00ADD8?style=for-the-badge&logo=go" alt="Go version"></a>
+  <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21-00ADD8?style=for-the-badge&logo=go" alt="Go version"></a>
 </p>
 
 **Mako** is an AI-native shell orchestrator that wraps around your existing shell (bash/zsh) to provide intelligent command assistance. Generate commands from natural language, search your history semantically with vector embeddings, and work faster with an AI that learns your preferences and understands context.
