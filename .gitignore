@@ -5,6 +5,9 @@
 
 # Binaries
 mako
+mako-menu
+/mako-*
+/dist/
 *.exe
 *.exe~
 *.dll

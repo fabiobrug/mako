@@ -29,19 +29,15 @@ jobs:
             goarch: amd64
           - goos: darwin
             goarch: arm64
-          
-          # Windows builds (optional)
-          - goos: windows
-            goarch: amd64
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.21'
       
       - name: Get version
         id: version
@@ -56,16 +52,16 @@ jobs:
           # Build main binary
           go build -tags "fts5" \
             -ldflags "-X github.com/fabiobrug/mako.git/internal/config.CurrentVersion=${{ steps.version.outputs.VERSION }}" \
-            -o mako-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} \
-            cmd/mako/main.go
+            -o mako-${{ matrix.goos }}-${{ matrix.goarch }} \
+            ./cmd/mako
           
           # Build menu binary
           go build \
-            -o mako-menu-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} \
-            cmd/mako-menu/main.go
+            -o mako-menu-${{ matrix.goos }}-${{ matrix.goarch }} \
+            ./cmd/mako-menu
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
           path: |
@@ -80,10 +76,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
       

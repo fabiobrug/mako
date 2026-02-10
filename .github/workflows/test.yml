@@ -13,10 +13,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
       
@@ -33,8 +33,8 @@ jobs:
       
       - name: Build
         run: |
-          go build -tags "fts5" -o mako cmd/mako/main.go
-          go build -o mako-menu cmd/mako-menu/main.go
+          go build -tags "fts5" -o mako ./cmd/mako
+          go build -o mako-menu ./cmd/mako-menu
       
       - name: Verify binaries
         run: |
@@ -48,12 +48,12 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.21'
       
       - name: Tidy dependencies
         run: go mod tidy
