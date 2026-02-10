@@ -60,8 +60,6 @@ func showMenu(title string, items []MenuItem) string {
 	fd := tty.Fd()
 	oldState, _ := getTermios(fd)
 	makeRaw(fd)
-	// Flush any buffered input to prevent first keystroke being lost
-	flushInput(fd)
 	defer restoreTermios(fd, oldState)
 
 	selected := 0
@@ -110,6 +108,9 @@ func showMenu(title string, items []MenuItem) string {
 	defer tty.WriteString("\033[?25h")
 
 	draw()
+
+	// Flush input buffer to discard any buffered keystrokes
+	flushInput(fd)
 
 	// Input loop
 	buf := make([]byte, 3)

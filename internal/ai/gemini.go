@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/fabiobrug/mako.git/internal/config"
 )
 
 const geminiAPIURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
@@ -18,9 +20,19 @@ type GeminiClient struct {
 }
 
 func NewGeminiClient() (*GeminiClient, error) {
+	// Try environment variable first
 	apiKey := os.Getenv("GEMINI_API_KEY")
+	
+	// If not in env, try loading from config
 	if apiKey == "" {
-		return nil, fmt.Errorf("GEMINI_API_KEY environment variable not set")
+		cfg, err := config.LoadConfig()
+		if err == nil && cfg.APIKey != "" {
+			apiKey = cfg.APIKey
+		}
+	}
+	
+	if apiKey == "" {
+		return nil, fmt.Errorf("API key not found. Set it with: mako config set api_key <your-key>")
 	}
 
 	return &GeminiClient{

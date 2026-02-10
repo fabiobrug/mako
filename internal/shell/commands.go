@@ -277,6 +277,7 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	defer os.Remove(pauseFile)
 
 	// Short delay to ensure main goroutine detects pause file
+	// With select() timeout of 50ms, this gives enough time for detection
 	time.Sleep(75 * time.Millisecond)
 
 	// Menu options

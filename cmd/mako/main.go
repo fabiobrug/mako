@@ -275,66 +275,55 @@ func runShellWrapper() {
 	}
 	defer Restore(os.Stdin.Fd(), oldState)
 
-	// Input forwarding with pause support
-	// Read larger chunks to preserve multi-byte sequences (escape codes, UTF-8, etc.)
-	pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
+	// Input forwarding goroutine (stdin -> PTY)
 	go func() {
-		buf := make([]byte, 32) // Read up to 32 bytes at a time
+		buf := make([]byte, 1024)
+		pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
 		stdinFd := int(os.Stdin.Fd())
 		
 		for {
-			// Check if we should pause
+			// Check if input is paused
 			if _, err := os.Stat(pauseFile); err == nil {
-				// Paused - wait and don't read
-				time.Sleep(20 * time.Millisecond)
+				// Pause file exists, don't read input
+				time.Sleep(10 * time.Millisecond)
 				continue
 			}
-
-			// Use select with timeout to check if stdin has data available
-			// This prevents blocking in Read() when pause file is created
+			
+			// Use select with timeout to avoid blocking indefinitely
+			// This prevents race condition where Read() blocks before pause file is created
 			readFds := &syscall.FdSet{}
 			FD_ZERO(readFds)
 			FD_SET(stdinFd, readFds)
 			
-			timeout := syscall.Timeval{Usec: 50000} // 50ms timeout
+			// 50ms timeout - checks for pause file every 50ms
+			timeout := syscall.Timeval{Usec: 50000}
+			
 			n, err := syscall.Select(stdinFd+1, readFds, nil, nil, &timeout)
 			if err != nil {
-				// Ignore EINTR (interrupted system call) - just retry
 				if err == syscall.EINTR {
-					continue
+					continue // Interrupted system call - retry
 				}
-				// For other errors, wait a bit and retry instead of exiting
-				time.Sleep(10 * time.Millisecond)
+				return
+			}
+			
+			// If no data available (timeout), loop back to check pause file
+			if n == 0 {
 				continue
 			}
 			
-			// If no data available, continue loop (will check pause file again)
-			if n == 0 {
-				continue
-			}
-
-			// Data is available, read it (won't block now)
+			// Data is available, safe to read (won't block now)
 			n, err = os.Stdin.Read(buf)
 			if err != nil {
-				// On read error, wait and retry instead of killing the goroutine
-				time.Sleep(10 * time.Millisecond)
-				continue
+				return
 			}
-			if n == 0 {
-				continue
+			
+			if n > 0 {
+				ptmx.Write(buf[:n])
 			}
-
-			// Check pause status again before forwarding
-			if _, err := os.Stat(pauseFile); err == nil {
-				// Pause activated - discard this input
-				continue
-			}
-
-			// Forward entire chunk to PTY (preserves multi-byte sequences)
-			ptmx.Write(buf[:n])
 		}
 	}()
 
+	// Output forwarding (PTY -> stdout, with interception)
 	interceptor.Tee(os.Stdout, ptmx)
 }
 
