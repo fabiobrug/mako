@@ -295,7 +295,7 @@ func (c *Checker) generateSuggestions(components []ComponentHealth) []string {
 // FormatReport formats the health report for display
 func FormatReport(report *HealthReport) string {
 	var output string
-	output += "🦈 Mako Health Check\r\n\r\n"
+	output += "▸ Mako Health Check\r\n\r\n"
 
 	for _, comp := range report.Components {
 		statusSymbol := "✓"

@@ -2,6 +2,135 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.0.0] - 2026-02-10
+
+### Added - Week 12: Production Ready & Distribution
+
+**🎉 MAJOR RELEASE - Production Ready!**
+
+This is the first stable release of Mako with all core features complete (Weeks 1-12).
+
+#### 🚀 One-Command Installation
+- **Installation script** - `curl -sSL https://get-mako.sh | bash` installs Mako in seconds
+- **Auto-detection** - Detects OS (Linux/macOS) and architecture (amd64/arm64/arm)
+- **Interactive setup** - Prompts for Gemini API key during installation
+- **Smart installation** - Uses `/usr/local/bin` or `~/.local/bin` (no sudo required)
+- New file: `scripts/install.sh` - Complete installation automation
+
+#### 🔧 Configuration Management
+- **Config system** - JSON-based configuration at `~/.mako/config.json`
+- **New commands**:
+  - `mako config list` - Show all settings
+  - `mako config get <key>` - Get specific value
+  - `mako config set <key> <value>` - Set configuration
+  - `mako config reset` - Reset to defaults
+- **Configuration options**:
+  - `api_key` - Gemini API key
+  - `theme` - UI theme (default: ocean)
+  - `cache_size` - Embedding cache size (10,000)
+  - `auto_update` - Auto-check for updates (true)
+  - `history_limit` - Max history entries (100,000)
+  - `safety_level` - Command safety: low/medium/high
+  - `telemetry` - Anonymous usage data (false)
+  - `embedding_batch_size` - Batch size (10)
+- New files: `internal/config/config.go`
+
+#### 🔄 Auto-Update System
+- **Update checker** - Checks GitHub for latest release
+- **New commands**:
+  - `mako update check` - Check for available updates
+  - `mako update install` - Download and install latest version
+- **Startup notification** - Notifies when new version available
+- **Safe updates** - Atomic binary replacement, preserves config
+- **Version comparison** - Semantic version checking
+- New files: `internal/config/update.go`
+
+#### 🎉 First-Run Experience
+- **Setup wizard** - Interactive onboarding for new users
+- **Step-by-step guide**:
+  1. API key configuration with masked input
+  2. Quick tour of features
+  3. Links to documentation
+- **Auto-detection** - Runs automatically on first launch
+- **Beautiful UI** - Color-coded terminal interface
+- New files: `internal/config/firstrun.go`
+
+#### 📝 Shell Completions
+- **Tab completion** - For bash, zsh, and fish shells
+- **New command**: `mako completion <bash|zsh|fish>`
+- **Smart completion**:
+  - All commands and subcommands
+  - File paths for export/import
+  - Configuration keys
+  - Alias names
+- New files: `packaging/completions/mako.{bash,zsh,fish}`
+
+#### 📖 Man Page Documentation
+- **Professional docs** - Complete man page with all commands
+- **Offline reference** - `man mako` for full documentation
+- **Includes**:
+  - Command reference
+  - Usage examples
+  - Configuration options
+  - Environment variables
+  - Exit codes
+  - Security notes
+- New files: `docs/man/mako.1`
+
+#### 🍺 Homebrew Formula
+- **Package manager support** - `brew install mako`
+- **Auto-installs**:
+  - Binaries
+  - Shell completions
+  - Man page
+- **Post-install message** - Setup instructions
+- **Testing included** - Formula includes tests
+- New files: `packaging/homebrew/mako.rb`
+
+#### 🗑️ Uninstall Script
+- **Clean removal** - Removes all Mako files
+- **Export option** - Offers to backup history before deletion
+- **Interactive** - Confirms before deletion
+- **New command**: `mako uninstall` (shows instructions)
+- **Removes**:
+  - Binaries
+  - Configuration
+  - Shell completions
+- New files: `scripts/uninstall.sh`
+
+#### ⚙️ GitHub Actions CI/CD
+- **Automated releases** - Tag push triggers build and release
+- **Cross-compilation** - Builds for:
+  - Linux: amd64, arm64, arm (v7)
+  - macOS: amd64 (Intel), arm64 (Apple Silicon)
+  - Windows: amd64 (optional)
+- **Release creation** - Automatic GitHub releases with binaries
+- **CI testing** - Runs tests on push to main/dev
+- **Code quality** - golangci-lint integration
+- New files: `.github/workflows/release.yml`, `.github/workflows/test.yml`
+
+#### 📚 Enhanced Documentation
+- **Installation guide** - Complete INSTALL.md with all methods
+- **Contributing guide** - CONTRIBUTING.md for developers
+- **Week 12 summary** - Detailed implementation documentation
+- New files:
+  - `docs/INSTALL.md`
+  - `docs/CONTRIBUTING.md`
+  - `docs/WEEK12_SUMMARY.md`
+
+### Changed
+- Updated version to 1.0.0 (first stable release)
+- Enhanced help text with new commands
+- Main binary now runs first-run wizard and update check
+- Commands require running inside Mako shell (improved error messages)
+
+### Technical Details
+- All terminal output uses proper `\r\n` line endings
+- Configuration stored in `~/.mako/config.json`
+- Update system uses GitHub API
+- Installation script supports Linux and macOS
+- Shell completions work with bash 4+, zsh 5+, fish 3+
+
 ## [0.5.0] - 2026-02-10
 
 ### Added - Week 11 Performance & Scale Optimization

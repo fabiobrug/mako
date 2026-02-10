@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Linux builds
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: linux
+            goarch: arm
+            goarm: 7
+          
+          # macOS builds
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          
+          # Windows builds (optional)
+          - goos: windows
+            goarch: amd64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Build mako
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+        run: |
+          # Build main binary
+          go build -tags "fts5" \
+            -ldflags "-X github.com/fabiobrug/mako.git/internal/config.CurrentVersion=${{ steps.version.outputs.VERSION }}" \
+            -o mako-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} \
+            cmd/mako/main.go
+          
+          # Build menu binary
+          go build \
+            -o mako-menu-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} \
+            cmd/mako-menu/main.go
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            mako-*
+            mako-menu-*
+          retention-days: 1
+  
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          ls -lh release/
+      
+      - name: Read CHANGELOG
+        id: changelog
+        run: |
+          # Extract changelog for this version
+          VERSION=${GITHUB_REF#refs/tags/}
+          
+          # Try to extract version-specific changes from CHANGELOG.md
+          if [ -f CHANGELOG.md ]; then
+            # Simple extraction - get content until next version or end
+            CHANGES=$(awk "/^## ${VERSION}/,/^## [0-9]/" CHANGELOG.md | grep -v "^## ${VERSION}" | grep -v "^## [0-9]" || echo "See CHANGELOG.md for details")
+          else
+            CHANGES="See repository for changelog"
+          fi
+          
+          # Save to file for multiline handling
+          echo "$CHANGES" > changelog.txt
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+          body_path: changelog.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Update installation script
+        run: |
+          echo "Release created successfully!"
+          echo "Users can now install with:"
+          echo "curl -sSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | bash"

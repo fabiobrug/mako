@@ -14,6 +14,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/fabiobrug/mako.git/internal/ai"
 	"github.com/fabiobrug/mako.git/internal/cache"
+	"github.com/fabiobrug/mako.git/internal/config"
 	"github.com/fabiobrug/mako.git/internal/database"
 	"github.com/fabiobrug/mako.git/internal/shell"
 	"github.com/fabiobrug/mako.git/internal/stream"
@@ -33,10 +34,10 @@ func main() {
 			lightBlue := "\033[38;2;93;173;226m"
 			dimBlue := "\033[38;2;120;150;180m"
 			reset := "\033[0m"
-			fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v0.1.3 %s%s\n", lightBlue, cyan, reset)
+			fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.0.0 %s%s\n", lightBlue, cyan, reset)
 			fmt.Printf("%s", dimBlue)
 			return
-		case "ask", "history", "stats":
+		case "ask", "history", "stats", "config", "update":
 			lightBlue := "\033[38;2;93;173;226m"
 			cyan := "\033[38;2;0;209;255m"
 			reset := "\033[0m"
@@ -46,6 +47,24 @@ func main() {
 			return
 		}
 	}
+
+	// Check for first run and run setup wizard
+	if config.IsFirstRun() {
+		if err := config.RunFirstTimeSetup(); err != nil {
+			fmt.Fprintf(os.Stderr, "Setup failed: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// Load configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Check for updates in background (if auto_update is enabled)
+	config.CheckUpdateOnStartup(cfg)
 
 	runShellWrapper()
 }

@@ -1,0 +1,264 @@
+.TH MAKO 1 "February 2026" "Mako 1.0.0" "User Commands"
+.SH NAME
+mako \- AI-native shell orchestrator
+.SH SYNOPSIS
+.B mako
+[\fICOMMAND\fR] [\fIOPTIONS\fR]
+.SH DESCRIPTION
+.B Mako
+is an intelligent shell wrapper that provides AI-powered command generation,
+semantic history search, and command safety validation. It intercepts terminal
+I/O through a PTY (pseudo-terminal) and routes commands to AI for natural
+language processing using Google's Gemini API.
+.PP
+Mako wraps around bash/zsh to provide intelligent command assistance while
+maintaining full compatibility with your existing shell environment.
+.SH COMMANDS
+.SS Command Generation
+.TP
+.B ask \fIquery\fR
+Generate shell command from natural language query. The AI analyzes your query
+along with recent terminal context to suggest the most appropriate command.
+.PP
+Example:
+.RS
+mako ask "list all files modified in the last week"
+.RE
+.SS History Management
+.TP
+.B history
+Display recent command history.
+.TP
+.B history \fIkeyword\fR
+Search command history by keyword using full-text search.
+.TP
+.B history semantic \fIquery\fR
+Search command history by semantic meaning using AI embeddings. This finds
+commands based on what they do, not just their text.
+.TP
+.B history --failed
+Show only commands that failed (non-zero exit code).
+.TP
+.B history --success
+Show only successful commands (zero exit code).
+.TP
+.B history --interactive
+Browse command history interactively with arrow keys.
+.SS Alias Management
+.TP
+.B alias save \fIname\fR \fIcommand\fR
+Save a command as an alias for quick reuse.
+.TP
+.B alias list [--tag \fItag\fR]
+List all saved aliases, optionally filtered by tag.
+.TP
+.B alias run \fIname\fR [\fIargs\fR]
+Run a saved alias, optionally with parameters.
+.TP
+.B alias delete \fIname\fR
+Delete a saved alias.
+.TP
+.B alias export \fIfile\fR
+Export all aliases to a JSON file.
+.TP
+.B alias import \fIfile\fR
+Import aliases from a JSON file.
+.SS Configuration
+.TP
+.B config list
+Show all configuration settings.
+.TP
+.B config get \fIkey\fR
+Get a specific configuration value.
+.TP
+.B config set \fIkey\fR \fIvalue\fR
+Set a configuration value.
+.PP
+Configuration keys:
+.RS
+.IP \(bu 2
+api_key - Google Gemini API key
+.IP \(bu 2
+theme - UI theme (default: ocean)
+.IP \(bu 2
+cache_size - Embedding cache size (default: 10000)
+.IP \(bu 2
+telemetry - Enable anonymous telemetry (default: false)
+.IP \(bu 2
+auto_update - Check for updates on startup (default: true)
+.IP \(bu 2
+history_limit - Maximum history entries (default: 100000)
+.IP \(bu 2
+safety_level - Command safety level: low/medium/high (default: medium)
+.IP \(bu 2
+embedding_batch_size - Batch size for embeddings (default: 10)
+.RE
+.TP
+.B config reset
+Reset all configuration to defaults.
+.SS Updates
+.TP
+.B update check
+Check if a new version is available.
+.TP
+.B update install
+Download and install the latest version.
+.SS Data Management
+.TP
+.B export [--last \fIN\fR]
+Export command history to JSON format. Use --last to export only the most
+recent N commands.
+.TP
+.B import \fIfile\fR
+Import command history from a JSON file.
+.TP
+.B sync
+Synchronize bash history into Mako's database.
+.SS System
+.TP
+.B stats
+Display usage statistics including command counts, AI usage, and performance
+metrics.
+.TP
+.B health
+Run a comprehensive health check covering database integrity, API connectivity,
+cache performance, and system resources.
+.TP
+.B clear
+Clear conversation history with the AI.
+.TP
+.B completion \fIshell\fR
+Generate shell completion script for bash, zsh, or fish.
+.TP
+.B help
+Display help information.
+.TP
+.B version
+Show Mako version.
+.SH ENVIRONMENT
+.TP
+.B GEMINI_API_KEY
+Google Gemini API key for AI features. Can also be set via configuration:
+.B mako config set api_key YOUR_KEY
+.TP
+.B MAKO_HOME
+Override default Mako directory (default: ~/.mako).
+.SH FILES
+.TP
+.I ~/.mako/config.json
+User configuration file.
+.TP
+.I ~/.mako/mako.db
+SQLite database containing command history with full-text search support.
+.TP
+.I ~/.mako/conversations/
+Directory containing AI conversation history.
+.TP
+.I ~/.mako/cache/
+Embedding cache for semantic search.
+.SH EXAMPLES
+.SS Basic Usage
+Start Mako shell:
+.RS
+.B mako
+.RE
+.PP
+Generate a command:
+.RS
+.B mako ask "find all log files larger than 100MB"
+.RE
+.PP
+Search history semantically:
+.RS
+.B mako history semantic "git operations"
+.RE
+.SS Alias Management
+Save a deployment alias:
+.RS
+.B mako alias save deploy "git push && ssh server './deploy.sh'"
+.RE
+.PP
+Run the alias:
+.RS
+.B mako alias run deploy
+.RE
+.SS Configuration
+Set your API key:
+.RS
+.B mako config set api_key YOUR_API_KEY_HERE
+.RE
+.PP
+View all settings:
+.RS
+.B mako config list
+.RE
+.SS Shell Completion
+Enable bash completion:
+.RS
+.B mako completion bash | sudo tee /etc/bash_completion.d/mako
+.RE
+.PP
+Enable zsh completion:
+.RS
+.B mako completion zsh > ~/.zsh/completions/_mako
+.RE
+.SH EXIT STATUS
+.TP
+.B 0
+Success
+.TP
+.B 1
+General error
+.TP
+.B 2
+Invalid usage
+.SH NOTES
+Mako maintains full compatibility with your existing shell environment. All
+regular shell commands work normally - Mako only intercepts commands that
+start with "mako".
+.PP
+The AI features require an active internet connection and a valid Gemini API
+key. Get your free API key at
+.UR https://ai.google.dev/
+.UE .
+.PP
+Semantic search uses vector embeddings to find commands by meaning. The first
+search may be slow as embeddings are generated, but subsequent searches use
+cached embeddings for fast results.
+.SH SECURITY
+Mako includes command safety validation to warn about potentially dangerous
+commands. The safety level can be configured:
+.PP
+.RS
+.IP \(bu 2
+.B low
+- Minimal warnings
+.IP \(bu 2
+.B medium
+- Balanced (default)
+.IP \(bu 2
+.B high
+- Maximum protection
+.RE
+.PP
+Sensitive data (API keys, passwords) should never be committed to version
+control. Mako stores the API key in ~/.mako/config.json which should have
+restricted permissions.
+.SH BUGS
+Report bugs at:
+.UR https://github.com/fabiobrug/mako/issues
+.UE
+.SH SEE ALSO
+.BR bash (1),
+.BR zsh (1),
+.BR sqlite3 (1)
+.PP
+Full documentation:
+.UR https://github.com/fabiobrug/mako
+.UE
+.SH AUTHOR
+Fabio Brug
+.UR https://github.com/fabiobrug
+.UE
+.SH COPYRIGHT
+MIT License - see LICENSE file in the source distribution.

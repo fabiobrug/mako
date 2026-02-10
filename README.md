@@ -42,17 +42,24 @@ mako stats
 
 Get your Gemini API key: [Google AI Studio](https://ai.google.dev/)
 
-## What's New in v0.5.0
+## What's New in v1.0.0 🎉
 
-**Performance & Scale Optimization (Week 11)**
+**First Stable Release - Production Ready!**
 
-- **20x Faster Command Saves** - Async embedding generation drops save time from 200ms+ to <10ms
-- **Intelligent Caching** - LRU cache with 80%+ hit rate eliminates redundant API calls
-- **Massive Scale** - Two-phase hybrid search handles 100k+ commands in <100ms
-- **30-50% Smaller Database** - SHA256-based deduplication eliminates redundant commands
-- **Health Diagnostics** - New `mako health` command provides system insights and optimization tips
-- **Export/Import** - JSON-based backup system with conflict resolution for data portability
-- **Auto History Sync** - Incremental bash history sync on startup and shutdown
+Week 12 brought professional distribution and ease of use:
+- **One-Command Install**: `curl -sSL https://get-mako.sh | bash`
+- **Auto-Updates**: Stay current with `mako update`
+- **Configuration**: Easy setup with `mako config`
+- **Professional Docs**: Man page, installation guide, shell completions
+- **Package Managers**: Homebrew support for easy installation
+
+Plus all the powerful features from Weeks 1-11:
+- AI-powered command generation from natural language
+- Semantic history search with vector embeddings
+- Async embedding generation (20x faster saves)
+- LRU caching with 80%+ hit rate
+- Command aliases and personalization
+- Health diagnostics and performance metrics
 
 See [CHANGELOG.md](CHANGELOG.md) for complete details.
 
@@ -373,11 +380,22 @@ The `fts5` tag enables SQLite full-text search capabilities for hybrid FTS5 + ve
 
 ## Development Status
 
-**Current Version**: v0.5.0 (2026-02-10)
+**Current Version**: v1.0.0 (2026-02-10) - **First Stable Release!**
 
 ### Implemented Features
 
-**Week 11 - Performance & Scale** (v0.5.0):
+**Week 12 - Production Ready** (v1.0.0):
+- One-command installation (`curl -sSL https://get-mako.sh | bash`)
+- Configuration management system (`mako config`)
+- Auto-update mechanism (`mako update`)
+- First-run setup wizard
+- Shell completions (bash/zsh/fish)
+- Professional man page
+- Homebrew formula
+- GitHub Actions CI/CD
+- Clean uninstall script
+
+**Week 11 - Performance & Scale**:
 - Async embedding generation with worker pool architecture (<10ms command saves)
 - LRU embedding cache with 10,000 entry capacity (80%+ hit rate)
 - Database deduplication with SHA256 hashing (30-50% size reduction)
@@ -386,13 +404,13 @@ The `fts5` tag enables SQLite full-text search capabilities for hybrid FTS5 + ve
 - Batch history sync with incremental updates
 - Health check diagnostics with performance metrics
 
-**Week 10 - Advanced AI Features** (v0.4.0):
+**Week 10 - Advanced AI Features**:
 - Multi-turn conversations with 5-minute auto-timeout
 - Smart context switching with project type detection (Go, Node, Python, Rust, etc.)
 - Enhanced command composition with pipeline intelligence
 - Personalization & learning (learns preferred flags after 3+ uses)
 
-**Week 9 - Feature Expansion** (v0.3.0):
+**Week 9 - Feature Expansion**:
 - AI-powered command alternatives and explanations
 - Simple line editor for command modification
 - Alias parameters with `$1`, `$2`, `$@`, `$#` support
@@ -402,7 +420,7 @@ The `fts5` tag enables SQLite full-text search capabilities for hybrid FTS5 + ve
 - Output preview in history
 - Interactive history browser
 
-**Week 8 - Foundation** (v0.2.0):
+**Week 8 - Foundation**:
 - Command explanation before execution
 - Edit before running workflow
 - Alias system with parameterization

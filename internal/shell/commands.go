@@ -13,6 +13,7 @@ import (
 	"github.com/fabiobrug/mako.git/internal/ai"
 	"github.com/fabiobrug/mako.git/internal/alias"
 	"github.com/fabiobrug/mako.git/internal/cache"
+	"github.com/fabiobrug/mako.git/internal/config"
 	"github.com/fabiobrug/mako.git/internal/database"
 	"github.com/fabiobrug/mako.git/internal/export"
 	"github.com/fabiobrug/mako.git/internal/health"
@@ -146,7 +147,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "help":
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v0.3.0\n"), nil
+			return true, fmt.Sprintf("v1.0.0\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
 		case "clear":
@@ -163,6 +164,18 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 			return true, output, err
 		case "sync":
 			output, err := handleSync(db)
+			return true, output, err
+		case "config":
+			output, err := handleConfig(parts[2:])
+			return true, output, err
+		case "update":
+			output, err := handleUpdate(parts[2:])
+			return true, output, err
+		case "completion":
+			output, err := handleCompletion(parts[2:])
+			return true, output, err
+		case "uninstall":
+			output, err := handleUninstall()
 			return true, output, err
 		default:
 			return true, fmt.Sprintf("Unknown mako command: %s\n", parts[1]), nil
@@ -1425,6 +1438,14 @@ func getHelpText() string {
 %s│%s  %smako alias export <file>%s         Export aliases to file
 %s│%s  %smako alias import <file>%s         Import aliases from file
 %s│%s  
+%s│%s  %smako config list%s                 Show all configuration settings
+%s│%s  %smako config get <key>%s            Get configuration value
+%s│%s  %smako config set <key> <value>%s    Set configuration value
+%s│%s  %smako config reset%s                Reset to default configuration
+%s│%s  
+%s│%s  %smako update check%s                Check for updates
+%s│%s  %smako update install%s              Install latest version
+%s│%s  
 %s│%s  %smako stats%s                       Show statistics
 %s│%s  %smako health%s                      Check Mako health and performance
 %s│%s  %smako export [--last N] > file%s    Export command history to JSON
@@ -1432,6 +1453,7 @@ func getHelpText() string {
 %s│%s  %smako sync%s                        Sync bash history to Mako
 %s│%s  
 %s│%s  %smako clear%s                       Clear conversation history
+%s│%s  %smako completion <bash|zsh|fish>%s  Generate shell completion script
 %s│%s  %smako help%s                        Show this help
 %s│%s  %smako version%s                     Show Mako version
 %s│%s 
@@ -1459,8 +1481,17 @@ func getHelpText() string {
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
@@ -1633,6 +1664,336 @@ func handleSync(db *database.DB) (string, error) {
 	
 	output := fmt.Sprintf("Synced %d new commands from %s\r\n", count, historyPath)
 	return output, nil
+}
+
+// handleConfig handles the 'mako config' command
+func handleConfig(args []string) (string, error) {
+	cyan := "\033[38;2;0;209;255m"
+	lightBlue := "\033[38;2;93;173;226m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
+
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if len(args) == 0 {
+		return fmt.Sprintf("Usage: mako config <list|get|set|reset>\r\n"), nil
+	}
+
+	switch args[0] {
+	case "list":
+		output := fmt.Sprintf("\r\n%sMako Configuration%s\r\n", cyan, reset)
+		output += fmt.Sprintf("%s━━━━━━━━━━━━━━━━━━━━━━%s\r\n\r\n", dimBlue, reset)
+		
+		settings := cfg.List()
+		for key, value := range settings {
+			// Hide API key (show only first 10 chars)
+			if key == "api_key" {
+				if str, ok := value.(string); ok && len(str) > 10 {
+					value = str[:10] + "..."
+				} else if str, ok := value.(string); ok && str == "" {
+					value = "(not set)"
+				}
+			}
+			output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, key, reset, value)
+		}
+		output += "\r\n"
+		return output, nil
+
+	case "get":
+		if len(args) < 2 {
+			return "Usage: mako config get <key>\r\n", nil
+		}
+		value, err := cfg.Get(args[1])
+		if err != nil {
+			return fmt.Sprintf("Error: %v\r\n", err), nil
+		}
+		
+		// Hide API key
+		if args[1] == "api_key" {
+			if str, ok := value.(string); ok && len(str) > 10 {
+				value = str[:10] + "..."
+			}
+		}
+		
+		return fmt.Sprintf("%s: %v\r\n", args[1], value), nil
+
+	case "set":
+		if len(args) < 3 {
+			return "Usage: mako config set <key> <value>\r\n", nil
+		}
+		
+		// Convert string value to appropriate type based on key
+		key := args[1]
+		valueStr := strings.Join(args[2:], " ")
+		
+		var value interface{} = valueStr
+		
+		// Type conversions for known keys
+		switch key {
+		case "cache_size", "history_limit", "embedding_batch_size":
+			var intVal int
+			if _, err := fmt.Sscanf(valueStr, "%d", &intVal); err != nil {
+				return fmt.Sprintf("Error: %s must be an integer\r\n", key), nil
+			}
+			value = intVal
+		case "telemetry", "auto_update":
+			value = valueStr == "true" || valueStr == "1" || valueStr == "yes"
+		}
+		
+		if err := cfg.Set(key, value); err != nil {
+			return fmt.Sprintf("Error: %v\r\n", err), nil
+		}
+		
+		if err := cfg.Save(); err != nil {
+			return "", fmt.Errorf("failed to save config: %w", err)
+		}
+		
+		return fmt.Sprintf("%s✓ Set %s%s\r\n", lightBlue, key, reset), nil
+
+	case "reset":
+		if err := cfg.Reset(); err != nil {
+			return "", fmt.Errorf("failed to reset config: %w", err)
+		}
+		return fmt.Sprintf("%s✓ Configuration reset to defaults%s\r\n", lightBlue, reset), nil
+
+	default:
+		return fmt.Sprintf("Unknown config command: %s\r\n", args[0]), nil
+	}
+}
+
+// handleUpdate handles the 'mako update' command
+func handleUpdate(args []string) (string, error) {
+	cyan := "\033[38;2;0;209;255m"
+	lightBlue := "\033[38;2;93;173;226m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
+
+	if len(args) == 0 {
+		return "Usage: mako update <check|install>\r\n", nil
+	}
+
+	switch args[0] {
+	case "check":
+		output := fmt.Sprintf("\r\n%sChecking for updates...%s\r\n\r\n", lightBlue, reset)
+		
+		info, err := config.CheckForUpdates()
+		if err != nil {
+			return "", fmt.Errorf("failed to check for updates: %w", err)
+		}
+
+		if info.Available {
+			output += fmt.Sprintf("%sNew version available:%s %sv%s%s (you have v%s)\r\n\r\n",
+				lightBlue, reset, cyan, info.LatestVersion, reset, info.CurrentVersion)
+			
+			if info.ReleaseNotes != "" {
+				output += fmt.Sprintf("%sChanges:%s\r\n", dimBlue, reset)
+				// Show first 5 lines of release notes
+				lines := strings.Split(info.ReleaseNotes, "\n")
+				for i, line := range lines {
+					if i >= 5 {
+						output += "  ...\r\n"
+						break
+					}
+					output += fmt.Sprintf("  %s\r\n", line)
+				}
+				output += "\r\n"
+			}
+			
+			output += fmt.Sprintf("%sRun:%s %smako update install%s\r\n\r\n", lightBlue, reset, cyan, reset)
+		} else {
+			output += fmt.Sprintf("%s✓ You're running the latest version (v%s)%s\r\n\r\n",
+				cyan, info.CurrentVersion, reset)
+		}
+		
+		return output, nil
+
+	case "install":
+		info, err := config.CheckForUpdates()
+		if err != nil {
+			return "", fmt.Errorf("failed to check for updates: %w", err)
+		}
+
+		if !info.Available {
+			return fmt.Sprintf("\r\n%s✓ You're already running the latest version%s\r\n\r\n",
+				cyan, reset), nil
+		}
+
+		if err := config.InstallUpdate(info); err != nil {
+			return "", fmt.Errorf("failed to install update: %w", err)
+		}
+
+		return "", nil // Success message printed by InstallUpdate
+
+	default:
+		return fmt.Sprintf("Unknown update command: %s\r\n", args[0]), nil
+	}
+}
+
+// handleCompletion generates shell completion scripts
+func handleCompletion(args []string) (string, error) {
+	if len(args) == 0 {
+		return "Usage: mako completion <bash|zsh|fish>\r\n", nil
+	}
+
+	var script string
+	switch args[0] {
+	case "bash":
+		script = getBashCompletion()
+	case "zsh":
+		script = getZshCompletion()
+	case "fish":
+		script = getFishCompletion()
+	default:
+		return fmt.Sprintf("Unknown shell: %s (supported: bash, zsh, fish)\r\n", args[0]), nil
+	}
+
+	return script + "\r\n", nil
+}
+
+// handleUninstall shows uninstall instructions
+func handleUninstall() (string, error) {
+	cyan := "\033[38;2;0;209;255m"
+	lightBlue := "\033[38;2;93;173;226m"
+	dimBlue := "\033[38;2;120;150;180m"
+	reset := "\033[0m"
+
+	output := fmt.Sprintf("\r\n%sUninstall Mako%s\r\n", cyan, reset)
+	output += fmt.Sprintf("%s━━━━━━━━━━━━━━━━━━━━━━%s\r\n\r\n", dimBlue, reset)
+	output += fmt.Sprintf("%sTo uninstall Mako, run:%s\r\n\r\n", lightBlue, reset)
+	output += fmt.Sprintf("  %scurl -sSL https://get-mako.sh/uninstall.sh | bash%s\r\n\r\n", cyan, reset)
+	output += fmt.Sprintf("%sOr manually:%s\r\n\r\n", lightBlue, reset)
+	output += fmt.Sprintf("  %s# Remove binaries%s\r\n", dimBlue, reset)
+	output += "  sudo rm /usr/local/bin/mako /usr/local/bin/mako-menu\r\n\r\n"
+	output += fmt.Sprintf("  %s# Remove configuration%s\r\n", dimBlue, reset)
+	output += "  rm -rf ~/.mako\r\n\r\n"
+	output += fmt.Sprintf("  %s# Remove completions (optional)%s\r\n", dimBlue, reset)
+	output += "  rm /etc/bash_completion.d/mako\r\n"
+	output += "  rm ~/.zsh/completions/_mako\r\n"
+	output += "  rm ~/.config/fish/completions/mako.fish\r\n\r\n"
+
+	return output, nil
+}
+
+func getBashCompletion() string {
+	return `_mako_completions() {
+    local cur prev commands
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    commands="ask history stats help version config alias export import health update sync draw clear completion uninstall"
+    
+    if [ $COMP_CWORD -eq 1 ]; then
+        COMPREPLY=($(compgen -W "${commands}" -- ${cur}))
+        return 0
+    fi
+    
+    case "${prev}" in
+        history)
+            COMPREPLY=($(compgen -W "semantic" -- ${cur}))
+            ;;
+        alias)
+            COMPREPLY=($(compgen -W "save list delete run" -- ${cur}))
+            ;;
+        config)
+            COMPREPLY=($(compgen -W "list get set reset" -- ${cur}))
+            ;;
+        update)
+            COMPREPLY=($(compgen -W "check install" -- ${cur}))
+            ;;
+        completion)
+            COMPREPLY=($(compgen -W "bash zsh fish" -- ${cur}))
+            ;;
+        export|import)
+            COMPREPLY=($(compgen -f -- ${cur}))
+            ;;
+    esac
+}
+
+complete -F _mako_completions mako`
+}
+
+func getZshCompletion() string {
+	return `#compdef mako
+
+_mako() {
+    local -a commands
+    commands=(
+        'ask:Generate command from natural language'
+        'history:Search command history'
+        'stats:Show usage statistics'
+        'alias:Manage command aliases'
+        'config:Manage configuration'
+        'update:Check for updates'
+        'export:Export command history'
+        'import:Import command history'
+        'health:Show system health'
+        'sync:Sync bash history'
+        'help:Show help'
+        'version:Show version'
+        'draw:Show shark art'
+        'clear:Clear screen'
+        'completion:Generate shell completion'
+        'uninstall:Show uninstall instructions'
+    )
+
+    if (( CURRENT == 2 )); then
+        _describe 'command' commands
+        return
+    fi
+
+    case "$words[2]" in
+        history)
+            _arguments '2:mode:(semantic)'
+            ;;
+        alias)
+            _arguments '2:action:(save list delete run)'
+            ;;
+        config)
+            _arguments '2:action:(list get set reset)'
+            ;;
+        update)
+            _arguments '2:action:(check install)'
+            ;;
+        completion)
+            _arguments '2:shell:(bash zsh fish)'
+            ;;
+        export|import)
+            _files
+            ;;
+    esac
+}
+
+_mako`
+}
+
+func getFishCompletion() string {
+	return `# Mako completion for fish shell
+
+# Commands
+complete -c mako -n "__fish_use_subcommand" -a ask -d "Generate command from natural language"
+complete -c mako -n "__fish_use_subcommand" -a history -d "Search command history"
+complete -c mako -n "__fish_use_subcommand" -a stats -d "Show usage statistics"
+complete -c mako -n "__fish_use_subcommand" -a alias -d "Manage command aliases"
+complete -c mako -n "__fish_use_subcommand" -a config -d "Manage configuration"
+complete -c mako -n "__fish_use_subcommand" -a update -d "Check for updates"
+complete -c mako -n "__fish_use_subcommand" -a export -d "Export command history"
+complete -c mako -n "__fish_use_subcommand" -a import -d "Import command history"
+complete -c mako -n "__fish_use_subcommand" -a health -d "Show system health"
+complete -c mako -n "__fish_use_subcommand" -a sync -d "Sync bash history"
+complete -c mako -n "__fish_use_subcommand" -a help -d "Show help"
+complete -c mako -n "__fish_use_subcommand" -a version -d "Show version"
+complete -c mako -n "__fish_use_subcommand" -a completion -d "Generate shell completion"
+complete -c mako -n "__fish_use_subcommand" -a uninstall -d "Show uninstall instructions"
+
+# Subcommands
+complete -c mako -n "__fish_seen_subcommand_from history" -a semantic -d "Semantic search"
+complete -c mako -n "__fish_seen_subcommand_from alias" -a "save list delete run"
+complete -c mako -n "__fish_seen_subcommand_from config" -a "list get set reset"
+complete -c mako -n "__fish_seen_subcommand_from update" -a "check install"
+complete -c mako -n "__fish_seen_subcommand_from completion" -a "bash zsh fish"`
 }
 
 func getSharkArt() string {
