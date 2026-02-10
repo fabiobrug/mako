@@ -277,8 +277,9 @@ Provide a brief explanation (2-3 sentences) covering:
 1. What the command does
 2. What the key flags/options mean
 3. Any potential side effects or warnings
+4. **Security warnings** if the command has any security implications (destructive operations, permission changes, network access, etc.)
 
-Be concise and user-friendly.`,
+Be concise and user-friendly. If there are security concerns, highlight them clearly.`,
 		context.OS,
 		context.Shell,
 		context.CurrentDir,
@@ -347,4 +348,91 @@ Be concise and user-friendly.`,
 
 	explanation := response.Candidates[0].Content.Parts[0].Text
 	return explanation, nil
+}
+
+// SuggestAlternatives generates alternative commands that accomplish the same goal
+func (g *GeminiClient) SuggestAlternatives(command string, context SystemContext) (string, error) {
+	prompt := fmt.Sprintf(`Given this shell command, suggest 2-3 alternative ways to accomplish the same goal.
+
+System: %s | Shell: %s | Dir: %s
+
+Original Command: %s
+
+Provide alternatives that:
+1. Use different tools/approaches
+2. May be safer, faster, or more efficient
+3. Have different trade-offs (verbosity, portability, features)
+
+Format each alternative as:
+• [command] - brief explanation of difference/advantage
+
+Be concise and practical.`,
+		context.OS,
+		context.Shell,
+		context.CurrentDir,
+		command,
+	)
+
+	requestBody := map[string]interface{}{
+		"contents": []map[string]interface{}{
+			{
+				"parts": []map[string]interface{}{
+					{"text": prompt},
+				},
+			},
+		},
+		"generationConfig": map[string]interface{}{
+			"temperature":     0.5,
+			"maxOutputTokens": 1024,
+		},
+	}
+
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", err
+	}
+
+	url := fmt.Sprintf("%s?key=%s", geminiAPIURL, g.apiKey)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := g.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	var response struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return "", err
+	}
+
+	if len(response.Candidates) == 0 || len(response.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("no response from API")
+	}
+
+	alternatives := response.Candidates[0].Content.Parts[0].Text
+	return alternatives, nil
 }

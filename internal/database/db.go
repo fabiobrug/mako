@@ -178,6 +178,54 @@ func (db *DB) GetRecentCommands(limit int) ([]Command, error) {
 	return commands, nil
 }
 
+// GetCommandsByExitCode returns commands filtered by success/failure
+func (db *DB) GetCommandsByExitCode(successful bool, limit int) ([]Command, error) {
+	var query string
+	if successful {
+		query = `
+			SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview
+			FROM commands
+			WHERE exit_code = 0
+			ORDER BY timestamp DESC
+			LIMIT ?
+		`
+	} else {
+		query = `
+			SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview
+			FROM commands
+			WHERE exit_code != 0
+			ORDER BY timestamp DESC
+			LIMIT ?
+		`
+	}
+
+	rows, err := db.conn.Query(query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var commands []Command
+	for rows.Next() {
+		var cmd Command
+		err := rows.Scan(
+			&cmd.ID,
+			&cmd.Command,
+			&cmd.Timestamp,
+			&cmd.ExitCode,
+			&cmd.Duration,
+			&cmd.WorkingDir,
+			&cmd.OutputPreview,
+		)
+		if err != nil {
+			return nil, err
+		}
+		commands = append(commands, cmd)
+	}
+
+	return commands, nil
+}
+
 func (db *DB) GetCommandsByDirectory(dir string, limit int) ([]Command, error) {
 	query := `
 		SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview
