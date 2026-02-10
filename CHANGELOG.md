@@ -243,6 +243,8 @@ This is the first stable release of Mako with all core features complete (Weeks 
 - `internal/health/health.go` - Health check system
 
 ### Bug Fixes
+- **Critical: Fixed API key not loading from config** - Now properly falls back to config file when `GEMINI_API_KEY` env var is not set
+- **Critical: Fixed menu first keystroke race condition** - Replaced blocking `Read()` with `syscall.Select()` timeout to prevent main goroutine from consuming first keystroke before menu starts
 - Fixed potential race conditions in cache access (added mutex)
 - Improved error handling in async worker retries
 - Better handling of corrupted history files in sync
@@ -341,7 +343,7 @@ This is the first stable release of Mako with all core features complete (Weeks 
 #### 📊 Enhanced History System
 - **Exit code filtering**:
   - `mako history --failed` - Show only failed commands
-  - `mako history --success` - Show only successful commands
+  - `mako history --success` - Show only successful commandssudo cp /home/fabiobrug/Major/mako/mako /home/fabiobrug/Major/mako/mako-menu /usr/local/bin/
   - Works with keyword and semantic search
 - **Output preview**: See first 60 characters of command output in history display
 - **Interactive history browser**: `mako history --interactive`
