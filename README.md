@@ -16,7 +16,7 @@ The tool intercepts terminal I/O through a PTY (pseudo-terminal) and routes comm
 
 ## Quick Start
 
-Runtime: **Go 1.25.6+**
+Runtime: **Go 1.21**
 
 ```bash
 # Clone and build
