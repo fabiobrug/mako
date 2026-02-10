@@ -168,7 +168,7 @@ func showMenu(title string, items []MenuItem) string {
 
 func getTermios(fd uintptr) (*syscall.Termios, error) {
 	t := &syscall.Termios{}
-	_, _, e := syscall.Syscall6(syscall.SYS_IOCTL, fd, syscall.TCGETS,
+	_, _, e := syscall.Syscall6(syscall.SYS_IOCTL, fd, getTermiosCmd(),
 		uintptr(unsafe.Pointer(t)), 0, 0, 0)
 	if e != 0 {
 		return nil, e
@@ -181,12 +181,12 @@ func makeRaw(fd uintptr) {
 	t.Lflag &^= syscall.ECHO | syscall.ICANON
 	t.Cc[syscall.VMIN] = 1
 	t.Cc[syscall.VTIME] = 0
-	syscall.Syscall6(syscall.SYS_IOCTL, fd, syscall.TCSETS,
+	syscall.Syscall6(syscall.SYS_IOCTL, fd, setTermiosCmd(),
 		uintptr(unsafe.Pointer(t)), 0, 0, 0)
 }
 
 func restoreTermios(fd uintptr, t *syscall.Termios) {
-	syscall.Syscall6(syscall.SYS_IOCTL, fd, syscall.TCSETS,
+	syscall.Syscall6(syscall.SYS_IOCTL, fd, setTermiosCmd(),
 		uintptr(unsafe.Pointer(t)), 0, 0, 0)
 }
 
