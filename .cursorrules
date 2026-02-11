@@ -6,13 +6,13 @@ Mako is an AI-native shell orchestrator that wraps around bash/zsh to provide in
 ## Tech Stack
 - **Language**: Go 1.25+
 - **Key Dependencies**: 
-  - `creack/pty` - PTY handling
-  - `mattn/go-sqlite3` - Database with FTS5
-  - `atotto/clipboard` - Clipboard operations
+ - `creack/pty` - PTY handling
+ - `modernc.org/sqlite` - Pure Go SQLite database with FTS5
+ - `atotto/clipboard` - Clipboard operations
 - **AI Provider**: Google Gemini API
-  - `gemini-2.0-flash-exp` for command generation
-  - `text-embedding-004` for semantic search
-- **Build Command**: `go build -tags "fts5" -o mako cmd/mako/main.go`
+ - `gemini-2.0-flash-exp` for command generation
+ - `text-embedding-004` for semantic search
+- **Build Command**: `make build` or `go build -o mako ./cmd/mako && go build -o mako-menu ./cmd/mako-menu`
 
 ## Architecture
 
@@ -189,14 +189,17 @@ redraw := func() {
 
 ### Building
 ```bash
-# Main binary
-go build -tags "fts5" -o mako cmd/mako/main.go
+# Using Makefile (recommended)
+make build          # Build both binaries
+make clean          # Clean build artifacts
+make install        # Install to /usr/local/bin
 
-# Menu binary
-go build -o mako-menu cmd/mako-menu/main.go
+# Manual build
+go build -o mako ./cmd/mako
+go build -o mako-menu ./cmd/mako-menu
 
-# Both at once
-go build -tags "fts5" -o mako cmd/mako/main.go && go build -o mako-menu cmd/mako-menu/main.go
+# Note: Build from package directory (./cmd/mako) not from specific file
+# This ensures platform-specific files are included
 ```
 
 ### Testing
@@ -311,8 +314,10 @@ When things go wrong:
    - Check `~/.mako/last_command.txt` is written
 
 5. **Database errors**
-   - Ensure build uses `-tags "fts5"`
-   - Check SQLite file permissions in `~/.mako/`
+ - Ensure you're using `modernc.org/sqlite` (pure Go, no CGO required)
+ - Build from package directory: `go build -o mako ./cmd/mako`
+ - DO NOT build from specific file: ~~`go build cmd/mako/main.go`~~
+ - Check SQLite file permissions in `~/.mako/`
 
 ## Contact & Contribution
 - Project Lead: Fabio (@fabiobrug)

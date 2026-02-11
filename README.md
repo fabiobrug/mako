@@ -247,9 +247,12 @@ cd mako
 # Set up API key
 echo "GEMINI_API_KEY=your_api_key_here" > .env
 
-# Build binaries (fts5 tag required)
-go build -tags "fts5" -o mako ./cmd/mako
-go build -o mako-menu ./cmd/mako-menu
+# Build binaries (using Makefile)
+make build
+
+# Or manually:
+# go build -o mako ./cmd/mako
+# go build -o mako-menu ./cmd/mako-menu
 
 # Run
 ./mako
@@ -368,13 +371,14 @@ The database automatically migrates to the latest schema on startup:
 
 Key dependencies:
 - `creack/pty` — PTY handling
-- `mattn/go-sqlite3` — SQLite driver with FTS5
+- `modernc.org/sqlite` — Pure Go SQLite driver with FTS5 (no CGO required)
 - `atotto/clipboard` — Clipboard operations
 - `joho/godotenv` — Environment management
 
 Build command:
 ```bash
-go build -tags "fts5" -o mako ./cmd/mako
+make build
+# Or: go build -o mako ./cmd/mako && go build -o mako-menu ./cmd/mako-menu
 ```
 
 Performance:
@@ -460,8 +464,7 @@ Performance:
 
 ```bash
 # Build both binaries
-go build -tags "fts5" -o mako cmd/mako/main.go && \
-go build -o mako-menu cmd/mako-menu/main.go
+make build
 
 # Clean build artifacts
 rm -f mako mako-menu
@@ -541,8 +544,7 @@ Contributions are welcome! Please:
 go test ./...
 
 # Build and test locally
-go build -tags "fts5" -o mako cmd/mako/main.go && \
-go build -o mako-menu cmd/mako-menu/main.go
+make build
 
 # Check health after changes
 ./mako
