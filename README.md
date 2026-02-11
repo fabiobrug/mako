@@ -27,7 +27,7 @@ Runtime: **Go 1.24+**
 
 ```bash
 # One-line install
-curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/mako-org/mako/dev/scripts/install.sh | bash
 
 # Start Mako
 mako
@@ -59,7 +59,7 @@ mako health
 
 **🎉 First Stable Release - Production Ready!**
 
-- **One-line install**: `curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash`
+- **One-line install**: `curl -sSL https://raw.githubusercontent.com/mako-org/mako/dev/scripts/install.sh | bash`
 - **Auto-updates**: Stay current with `mako update`
 - **Configuration system**: Easy setup with `mako config`
 - **Professional docs**: Man page (`man mako`), installation guide, shell completions
