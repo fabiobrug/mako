@@ -8,7 +8,7 @@
   <a href="https://github.com/fabiobrug/mako/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/fabiobrug/mako/test.yml?branch=dev&style=for-the-badge" alt="CI status"></a>
   <a href="https://github.com/fabiobrug/mako/releases"><img src="https://img.shields.io/github/v/release/fabiobrug/mako?include_prereleases&style=for-the-badge" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
-  <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go" alt="Go version"></a>
+  <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go" alt="Go version"></a>
 </p>
 
 **Mako** is an AI-native shell orchestrator that wraps around your existing shell (bash/zsh) to provide intelligent command assistance. Generate commands from natural language, search your history semantically, and work faster with an AI that learns your preferences and understands context.
@@ -23,7 +23,7 @@ curl -sSL https://raw.githubusercontent.com/mako-org/mako/dev/scripts/install.sh
 
 ## Install (recommended)
 
-Runtime: **Go 1.21+**
+Runtime: **Go 1.24+**
 
 ```bash
 # One-line install
@@ -238,7 +238,7 @@ The installer:
 
 ### Option 2: From source
 
-Runtime: **Go 1.21+**
+Runtime: **Go 1.24+**
 
 ```bash
 git clone https://github.com/fabiobrug/mako.git
@@ -257,7 +257,7 @@ go build -o mako-menu ./cmd/mako-menu
 
 ### Prerequisites
 
-- Go 1.21+ (for building from source)
+- Go 1.24+ (for building from source)
 - SQLite3 with FTS5 support
 - Gemini API key from [Google AI Studio](https://ai.google.dev/)
 
@@ -359,7 +359,7 @@ The database automatically migrates to the latest schema on startup:
 
 ## Technology stack
 
-- **Language**: Go 1.21+
+- **Language**: Go 1.24+
 - **AI Provider**: Google Gemini API
   - `gemini-2.0-flash-exp` for command generation
   - `text-embedding-004` for semantic search (768-dimensional vectors)
