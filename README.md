@@ -18,7 +18,7 @@
 Preferred setup: one-line install script. Works on **Linux and macOS**.
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/mako-org/mako/dev/scripts/install.sh | bash
 ```
 
 ## Install (recommended)
