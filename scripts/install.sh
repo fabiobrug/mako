@@ -14,7 +14,7 @@ YELLOW='\033[1;33m'
 RESET='\033[0m'
 
 # Configuration
-REPO="fabiobrug/mako"
+REPO="mako-org/mako"
 INSTALL_DIR="/usr/local/bin"
 MAKO_DIR="$HOME/.mako"
 VERSION="${MAKO_VERSION:-latest}"
