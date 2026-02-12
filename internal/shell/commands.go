@@ -147,7 +147,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "help":
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v1.1.7\n"), nil
+			return true, fmt.Sprintf("v1.1.8\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
 		case "clear":
@@ -276,9 +276,8 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	os.WriteFile(pauseFile, []byte("1"), 0644)
 	defer os.Remove(pauseFile)
 
-	// Short delay to ensure main goroutine detects pause file
-	// With select() timeout of 50ms, this gives enough time for detection
-	time.Sleep(75 * time.Millisecond)
+	// Longer delay for zsh which may have more aggressive input buffering
+	time.Sleep(150 * time.Millisecond)
 
 	// Menu options
 	menuArgs := []string{
@@ -335,7 +334,9 @@ func handleAsk(query string, db *database.DB) (string, error) {
 	}
 
 	choice := strings.TrimSpace(string(choiceBytes))
-	time.Sleep(100 * time.Millisecond)
+	
+	// Give time for pause_file removal and terminal state to settle
+	time.Sleep(150 * time.Millisecond)
 
 	// Handle choice
 	switch choice {

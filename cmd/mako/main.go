@@ -33,7 +33,7 @@ func main() {
 		lightBlue := "\033[38;2;93;173;226m"
 		dimBlue := "\033[38;2;120;150;180m"
 		reset := "\033[0m"
-		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.1.7 %s%s\n", lightBlue, cyan, reset)
+		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.1.8 %s%s\n", lightBlue, cyan, reset)
 			fmt.Printf("%s", dimBlue)
 			return
 		case "ask", "history", "stats", "config", "update":
@@ -235,10 +235,31 @@ func runShellWrapper() {
 	// Set embedding cache for shell commands
 	shell.SetEmbeddingCache(embeddingCache)
 
+	// Clean up any stale pause file from previous runs
+	pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
+	os.Remove(pauseFile) // Ignore error if file doesn't exist
+	
 	fmt.Printf("\n%s▸ Mako shell ready%s\n", lightBlue, reset)
-	makoRcPath := createMakoRc()
-	defer os.Remove(makoRcPath)
-	cmd := exec.Command(shellPath, "--rcfile", makoRcPath, "-i")
+	
+	// Detect shell type and create appropriate command
+	shellName := filepath.Base(shellPath)
+	var cmd *exec.Cmd
+	
+	if strings.Contains(shellName, "zsh") {
+		// For zsh, use ZDOTDIR to point to custom rc file
+		makoRcPath := createMakoRc("zsh")
+		makoDir := filepath.Dir(makoRcPath)
+		defer os.RemoveAll(makoDir)
+		
+		cmd = exec.Command(shellPath, "-i")
+		cmd.Env = append(os.Environ(), fmt.Sprintf("ZDOTDIR=%s", makoDir))
+	} else {
+		// For bash and other shells, use --rcfile
+		makoRcPath := createMakoRc("bash")
+		defer os.Remove(makoRcPath)
+		cmd = exec.Command(shellPath, "--rcfile", makoRcPath, "-i")
+	}
+	
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start PTY: %v\n", err)
@@ -254,6 +275,10 @@ func runShellWrapper() {
 	}
 
 	defer func() {
+		// Clean up pause file if it exists
+		pauseFile := filepath.Join(os.Getenv("HOME"), ".mako", "pause_input")
+		os.Remove(pauseFile)
+		
 		ptmx.Close()
 		fmt.Print("\r\033[K")
 		fmt.Printf("\n%s▸ Mako session ended%s\n", lightBlue, reset)
@@ -326,14 +351,58 @@ func runShellWrapper() {
 	interceptor.Tee(os.Stdout, ptmx)
 }
 
-func createMakoRc() string {
+func createMakoRc(shellType string) string {
 	homeDir := os.Getenv("HOME")
 	makoDir := filepath.Join(homeDir, ".mako")
 	cmdFile := filepath.Join(makoDir, "last_command.txt")
 
 	os.MkdirAll(makoDir, 0755)
 
-	content := fmt.Sprintf(`
+	var content string
+	var tmpFile *os.File
+	var err error
+
+	if shellType == "zsh" {
+		// For zsh, create a temporary ZDOTDIR with .zshrc
+		tmpDir, err := os.MkdirTemp("", "mako-zsh-*")
+		if err != nil {
+			return ""
+		}
+
+		content = fmt.Sprintf(`
+# Mako customizations (before sourcing user's zshrc to avoid instant prompt issues)
+export MAKO_ACTIVE=1
+MAKO_CMD_FILE="%s"
+
+# Create a 'mako' shell function
+mako() {
+    # Write command to file for interceptor to read
+    echo "mako $@" > "$MAKO_CMD_FILE"
+    # Print a unique marker
+    echo "<<<MAKO_EXECUTE>>>"
+}
+
+# Source user's normal zshrc
+if [ -f %s/.zshrc ]; then
+    source %s/.zshrc
+else
+    # Only set prompt if user has no zshrc (and likely no theme)
+    PROMPT='%%F{cyan}%%~%%f %%F{white}❯%%f '
+fi
+`, cmdFile, homeDir, homeDir)
+
+		rcPath := filepath.Join(tmpDir, ".zshrc")
+		if err := os.WriteFile(rcPath, []byte(content), 0644); err != nil {
+			os.RemoveAll(tmpDir)
+			return ""
+		}
+		
+		// Return the path to .zshrc file (not just the directory)
+		// This way filepath.Dir() will correctly extract the ZDOTDIR
+		return rcPath
+	} else {
+		// For bash, create temporary rcfile
+		content = fmt.Sprintf(`
 # Source user's normal bashrc first
 if [ -f %s/.bashrc ]; then
     source %s/.bashrc
@@ -357,23 +426,36 @@ PS1='\[\033[0;36m\]\w\[\033[1;37m\] ❯ \[\033[0m\]'
 echo ""
 `, homeDir, homeDir, cmdFile)
 
-	tmpFile, err := os.CreateTemp("", "makorc-*.sh")
-	if err != nil {
-		return ""
+		tmpFile, err = os.CreateTemp("", "makorc-*.sh")
+		if err != nil {
+			return ""
+		}
+
+		tmpFile.WriteString(content)
+		tmpFile.Close()
+
+		return tmpFile.Name()
 	}
-
-	tmpFile.WriteString(content)
-	tmpFile.Close()
-
-	return tmpFile.Name()
 }
 
 func syncBashHistory(db *database.DB) {
-	histFile := filepath.Join(os.Getenv("HOME"), ".bash_history")
-
+	homeDir := os.Getenv("HOME")
+	
+	// Try bash history first, then zsh history
+	histFile := filepath.Join(homeDir, ".bash_history")
 	data, err := os.ReadFile(histFile)
 	if err != nil {
-		return
+		// Try zsh history
+		histFile = filepath.Join(homeDir, ".zsh_history")
+		data, err = os.ReadFile(histFile)
+		if err != nil {
+			// Try alternative zsh history location
+			histFile = filepath.Join(homeDir, ".zhistory")
+			data, err = os.ReadFile(histFile)
+			if err != nil {
+				return
+			}
+		}
 	}
 
 	lines := strings.Split(string(data), "\n")

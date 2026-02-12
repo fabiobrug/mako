@@ -58,6 +58,7 @@ func showMenu(title string, items []MenuItem) string {
 	defer tty.Close()
 
 	fd := tty.Fd()
+	
 	oldState, _ := getTermios(fd)
 	makeRaw(fd)
 	defer restoreTermios(fd, oldState)
@@ -110,12 +111,19 @@ func showMenu(title string, items []MenuItem) string {
 	draw()
 
 	// Flush input buffer to discard any buffered keystrokes
+	// Do multiple flushes with delay to handle zsh buffering
+	flushInput(fd)
+	time.Sleep(50 * time.Millisecond)
 	flushInput(fd)
 
 	// Input loop
 	buf := make([]byte, 3)
 	for {
-		n, _ := tty.Read(buf[:1])
+		n, err := tty.Read(buf[:1])
+		if err != nil {
+			// On error, return first item
+			return items[0].Value
+		}
 		if n == 0 {
 			continue
 		}
@@ -178,7 +186,16 @@ func getTermios(fd uintptr) (*syscall.Termios, error) {
 
 func makeRaw(fd uintptr) {
 	t, _ := getTermios(fd)
-	t.Lflag &^= syscall.ECHO | syscall.ICANON
+	// Disable canonical mode, echo, and signal generation
+	t.Lflag &^= syscall.ECHO | syscall.ICANON | syscall.ISIG | syscall.IEXTEN
+	// Disable input processing (CR/NL mapping, etc)
+	t.Iflag &^= syscall.BRKINT | syscall.ICRNL | syscall.INPCK | syscall.ISTRIP | syscall.IXON
+	// Disable output processing
+	t.Oflag &^= syscall.OPOST
+	// Character size mask
+	t.Cflag &^= syscall.CSIZE | syscall.PARENB
+	t.Cflag |= syscall.CS8
+	// Read returns immediately with minimum 1 character
 	t.Cc[syscall.VMIN] = 1
 	t.Cc[syscall.VTIME] = 0
 	syscall.Syscall6(syscall.SYS_IOCTL, fd, setTermiosCmd(),

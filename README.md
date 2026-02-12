@@ -55,7 +55,19 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.1.7
+## What's New in v1.1.8
+
+**🐚 Zsh Support & Terminal Fixes**
+
+- **Full zsh compatibility**: Added native zsh support with proper ZDOTDIR handling
+- **Fixed zsh shell initialization**: Proper RC file sourcing without `--rcfile` errors
+- **Powerlevel10k integration**: No more instant prompt warnings in themed shells
+- **Improved terminal raw mode**: Better keyboard input handling for interactive menus
+- **Stale pause file cleanup**: Automatic cleanup prevents input blocking on restart
+- **Enhanced input buffering**: Improved timing for zsh's aggressive buffering
+- **Shell-specific history sync**: Support for both `.bash_history` and `.zsh_history`
+
+**Previous Release - v1.1.7**
 
 **🔧 Bug Fixes & Improvements**
 
@@ -397,7 +409,7 @@ Performance:
 
 ## Development Status
 
-**Current Version**: v1.1.7 (2026-02-11) - **Bug Fixes & Improvements**
+**Current Version**: v1.1.8 (2026-02-12) - **Zsh Support & Terminal Fixes**
 
 ### Implemented Features
 
