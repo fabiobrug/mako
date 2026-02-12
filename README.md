@@ -8,10 +8,10 @@ Transform your terminal with AI-powered command assistance.
 
 <br>
 
-![CI Status](https://img.shields.io/github/actions/workflow/status/fabiobrug/mako/test.yml?branch=dev&style=for-the-badge&labelColor=F0F0E8&color=1d4ed8)
-![Release](https://img.shields.io/github/v/release/fabiobrug/mako?include_prereleases&style=for-the-badge&labelColor=F0F0E8&color=1d4ed8)
-![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&labelColor=F0F0E8&color=1d4ed8)
-![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&labelColor=F0F0E8&color=1d4ed8)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/fabiobrug/mako/test.yml?branch=dev&style=for-the-badge&labelColor=F0F0E8&color=1d4ed8)](https://github.com/fabiobrug/mako/actions/workflows/test.yml)
+[![Release](https://img.shields.io/github/v/release/fabiobrug/mako?include_prereleases&style=for-the-badge&labelColor=F0F0E8&color=1d4ed8)](https://github.com/fabiobrug/mako/releases)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&labelColor=F0F0E8&color=1d4ed8)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&labelColor=F0F0E8&color=1d4ed8)](https://go.dev/)
 
 </div>
 
