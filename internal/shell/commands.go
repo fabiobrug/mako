@@ -147,7 +147,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "help":
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v1.0.0\n"), nil
+			return true, fmt.Sprintf("v1.1.2\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
 		case "clear":

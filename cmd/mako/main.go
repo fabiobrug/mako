@@ -29,11 +29,11 @@ func main() {
 			showHelp()
 			return
 		case "version", "-v", "--version":
-			cyan := "\033[38;2;0;209;255m"
-			lightBlue := "\033[38;2;93;173;226m"
-			dimBlue := "\033[38;2;120;150;180m"
-			reset := "\033[0m"
-			fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.0.0 %s%s\n", lightBlue, cyan, reset)
+		cyan := "\033[38;2;0;209;255m"
+		lightBlue := "\033[38;2;93;173;226m"
+		dimBlue := "\033[38;2;120;150;180m"
+		reset := "\033[0m"
+		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.1.2 %s%s\n", lightBlue, cyan, reset)
 			fmt.Printf("%s", dimBlue)
 			return
 		case "ask", "history", "stats", "config", "update":
