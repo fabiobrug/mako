@@ -1,4 +1,4 @@
-.PHONY: build clean install test
+.PHONY: build clean install test release
 
 # Build both binaries
 build:
@@ -10,6 +10,7 @@ build:
 # Clean build artifacts
 clean:
 	@rm -f mako mako-menu
+	@rm -rf dist
 	@echo "Cleaned build artifacts"
 
 # Install to /usr/local/bin (requires sudo)
@@ -27,3 +28,7 @@ test:
 quick:
 	@go build -o mako ./cmd/mako
 	@echo "Mako rebuilt"
+
+# Build release binaries for all platforms
+release:
+	@./scripts/build-release.sh $(VERSION)
