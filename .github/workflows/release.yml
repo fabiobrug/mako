@@ -49,14 +49,15 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           GOARM: ${{ matrix.goarm }}
         run: |
-          # Build main binary
-          go build -tags "fts5" \
-            -ldflags "-X github.com/fabiobrug/mako.git/internal/config.CurrentVersion=${{ steps.version.outputs.VERSION }}" \
+          # Build main binary (no tags needed for modernc.org/sqlite)
+          go build \
+            -ldflags "-s -w -X github.com/fabiobrug/mako.git/internal/config.CurrentVersion=${{ steps.version.outputs.VERSION }}" \
             -o mako-${{ matrix.goos }}-${{ matrix.goarch }} \
             ./cmd/mako
           
           # Build menu binary
           go build \
+            -ldflags "-s -w" \
             -o mako-menu-${{ matrix.goos }}-${{ matrix.goarch }} \
             ./cmd/mako-menu
       
