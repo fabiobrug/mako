@@ -268,7 +268,7 @@ Mako is open source software licensed under the [MIT License](LICENSE).
 
 ## Creators
 
-Made with care by [Fabio Brug](https://github.com/fabiobrug)
+Made with care by [Fabio Brugnara](https://github.com/fabiobrug)
 
 ---
 
