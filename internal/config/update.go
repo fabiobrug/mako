@@ -13,7 +13,7 @@ import (
 
 const (
 	GitHubAPIURL = "https://api.github.com/repos/fabiobrug/mako/releases/latest"
-	CurrentVersion = "1.0.0"
+	CurrentVersion = "1.1.6"
 )
 
 // UpdateInfo contains information about available updates
@@ -130,22 +130,18 @@ func InstallUpdate(info *UpdateInfo) error {
 		return fmt.Errorf("failed to resolve binary path: %w", err)
 	}
 
-	// Create backup of current binary
-	backupPath := currentBinary + ".backup"
-	if err := copyFile(currentBinary, backupPath); err != nil {
-		return fmt.Errorf("failed to backup current binary: %w", err)
-	}
-
-	// Replace current binary with new one
+	// Try to replace current binary with new one
 	if err := copyFile(tmpFile.Name(), currentBinary); err != nil {
-		// Restore backup on failure
-		copyFile(backupPath, currentBinary)
-		os.Remove(backupPath)
+		// Check if it's a permission error
+		if os.IsPermission(err) {
+			fmt.Printf("\n%s✗ Permission denied%s\n\n", lightBlue, reset)
+			fmt.Printf("%sThe update requires elevated permissions.%s\n", lightBlue, reset)
+			fmt.Printf("%sPlease run the installation script instead:%s\n\n", lightBlue, reset)
+			fmt.Printf("  %scurl -sSL https://raw.githubusercontent.com/mako-org/mako/dev/scripts/install.sh | bash%s\n\n", cyan, reset)
+			return fmt.Errorf("permission denied - installation requires root access")
+		}
 		return fmt.Errorf("failed to install update: %w", err)
 	}
-
-	// Remove backup
-	os.Remove(backupPath)
 
 	fmt.Printf("%s✓ Updated to v%s successfully!%s\n", cyan, info.LatestVersion, reset)
 	fmt.Printf("%sRestart Mako to use the new version%s\n\n", lightBlue, reset)
@@ -198,9 +194,9 @@ func CheckUpdateOnStartup(config *Config) {
 			cyan := "\033[38;2;0;209;255m"
 			reset := "\033[0m"
 
-			fmt.Printf("%sℹ  New version available: %sv%s%s (you have v%s)\n",
-				lightBlue, cyan, info.LatestVersion, reset, info.CurrentVersion)
-			fmt.Printf("%s   Run 'mako update install' to update%s\n\n",
+			fmt.Printf("\r\n%sℹ  New version available: %sv%s%s (you have v%s)%s\r\n",
+				lightBlue, cyan, info.LatestVersion, reset, info.CurrentVersion, reset)
+			fmt.Printf("%s   Run 'mako update install' to update%s\r\n\r\n",
 				lightBlue, reset)
 		}
 	}()
