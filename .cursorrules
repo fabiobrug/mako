@@ -3,7 +3,16 @@
 ## Project Overview
 Mako is an AI-native shell orchestrator that wraps around bash/zsh to provide intelligent command assistance. It intercepts terminal I/O through a PTY (pseudo-terminal) and routes commands to AI for natural language processing.
 
+**This is a monorepo** containing:
+- `apps/cli/` - Go-based CLI application
+- `apps/landing/` - Next.js landing page
+- `packages/` - Shared packages (future)
+- `scripts/` - Build and deployment scripts
+- `docs/` - Project documentation
+
 ## Tech Stack
+
+### CLI Application (`apps/cli/`)
 - **Language**: Go 1.25+
 - **Key Dependencies**: 
  - `creack/pty` - PTY handling
@@ -12,7 +21,15 @@ Mako is an AI-native shell orchestrator that wraps around bash/zsh to provide in
 - **AI Provider**: Google Gemini API
  - `gemini-2.0-flash-exp` for command generation
  - `text-embedding-004` for semantic search
-- **Build Command**: `make build` or `go build -o mako ./cmd/mako && go build -o mako-menu ./cmd/mako-menu`
+- **Build Command**: `cd apps/cli && make build`
+- **Manual Build**: `cd apps/cli && go build -o mako ./cmd/mako && go build -o mako-menu ./cmd/mako-menu`
+
+### Landing Page (`apps/landing/`)
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Build Tool**: Turbopack
+- **Dev Command**: `cd apps/landing && npm run dev`
 
 ## Architecture
 
@@ -123,40 +140,54 @@ redraw := func() {
 
 ## File Structure & Responsibilities
 
-### `cmd/mako/main.go`
+### CLI Application (`apps/cli/`)
+
+#### `cmd/mako/main.go`
 - PTY creation and management
 - Signal handling (SIGWINCH for resize)
 - Raw terminal mode setup
 - I/O goroutines (stdin → PTY, PTY → stream interceptor)
 
-### `cmd/mako-menu/main.go`
+#### `cmd/mako-menu/main.go`
 - Standalone interactive menu
 - Reads from `/dev/tty` for input/output
 - Returns choice via stdout
 - Must clean up completely on exit
 
-### `internal/stream/interceptor.go`
+#### `internal/stream/interceptor.go`
 - Captures all PTY output
 - Detects `<<<MAKO_EXECUTE>>>` marker
 - Routes to command handlers
 - **MUST** convert `\n` to `\r\n` in output
 
-### `internal/shell/commands.go`
+#### `internal/shell/commands.go`
 - Command routing: `ask`, `history`, `stats`, etc.
 - AI integration for command generation
 - Interactive menu invocation
 - Database operations
 - **MUST** convert `\n` to `\r\n` in command output
 
-### `internal/ai/gemini.go`
+#### `internal/ai/gemini.go`
 - Gemini API client
 - Command generation from natural language
 - Response parsing and cleaning
 
-### `internal/database/db.go`
+#### `internal/database/db.go`
 - SQLite operations with FTS5
 - Command history storage
 - Semantic search with vector embeddings
+
+### Landing Page (`apps/landing/`)
+
+#### `app/`
+- Next.js app directory with pages and layouts
+- Server and client components
+
+#### `components/`
+- Reusable React components
+
+#### `public/`
+- Static assets (images, fonts, etc.)
 
 ## Common Pitfalls & Solutions
 
@@ -187,8 +218,11 @@ redraw := func() {
 
 ## Development Workflow
 
-### Building
+### Building the CLI
 ```bash
+# Navigate to CLI directory
+cd apps/cli
+
 # Using Makefile (recommended)
 make build          # Build both binaries
 make clean          # Clean build artifacts
@@ -202,8 +236,32 @@ go build -o mako-menu ./cmd/mako-menu
 # This ensures platform-specific files are included
 ```
 
-### Testing
+### Running the Landing Page
 ```bash
+# Navigate to landing directory
+cd apps/landing
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+### Building Release Binaries (from repo root)
+```bash
+# From repository root
+./scripts/build-release.sh v1.0.0
+```
+
+### Testing the CLI
+```bash
+# Navigate to CLI directory
+cd apps/cli
+
 # Start Mako
 ./mako
 

@@ -53,7 +53,7 @@ for platform in "${PLATFORMS[@]}"; do
     print_step "Building $GOOS/$GOARCH..."
     
     # Build main binary
-    if GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w" -o "$OUTPUT_DIR/$output_name_main" ./cmd/mako; then
+    if GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w" -o "$OUTPUT_DIR/$output_name_main" ./apps/cli/cmd/mako; then
         print_success "Built $output_name_main ($(du -h "$OUTPUT_DIR/$output_name_main" | cut -f1))"
     else
         print_error "Failed to build $output_name_main"
@@ -61,7 +61,7 @@ for platform in "${PLATFORMS[@]}"; do
     fi
     
     # Build menu binary
-    if GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w" -o "$OUTPUT_DIR/$output_name_menu" ./cmd/mako-menu; then
+    if GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w" -o "$OUTPUT_DIR/$output_name_menu" ./apps/cli/cmd/mako-menu; then
         print_success "Built $output_name_menu ($(du -h "$OUTPUT_DIR/$output_name_menu" | cut -f1))"
     else
         print_error "Failed to build $output_name_menu"

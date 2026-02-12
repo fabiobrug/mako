@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @font-face {
+            font-family: 'CaskaydiaCove Nerd Font Mono';
+            src: url('/fonts/CaskaydiaCoveNerdFontMono-SemiBold.ttf') format('truetype');
+            font-weight: 600;
+        }
+        
+        .test1 { font-family: 'CaskaydiaCove Nerd Font Mono', monospace; }
+        .test2 { font-family: 'CaskaydiaCove NF', monospace; }
+        .test3 { font-family: 'JetBrains Mono', monospace; }
+        
+        div {
+            font-size: 24px;
+            margin: 20px;
+            padding: 10px;
+            background: #1e1e1e;
+            color: #fff;
+        }
+    </style>
+</head>
+<body style="background: #000; color: #fff; padding: 40px;">
+    <h1>Font Test</h1>
+    <div class="test1">
+        Test 1: CaskaydiaCove Nerd Font Mono<br>
+        $ mako ask "find files"<br>
+        ═══════════════════════
+    </div>
+    <div class="test2">
+        Test 2: CaskaydiaCove NF<br>
+        $ mako ask "find files"<br>
+        ═══════════════════════
+    </div>
+    <div class="test3">
+        Test 3: JetBrains Mono (fallback)<br>
+        $ mako ask "find files"<br>
+        ═══════════════════════
+    </div>
+</body>
+</html>

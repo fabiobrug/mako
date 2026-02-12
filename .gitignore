@@ -3,10 +3,12 @@
 .env.local
 .env.*.local
 
-# Binaries (root only; do not ignore cmd/mako/ source)
+# Binaries (do not ignore cmd/mako/ source)
 /mako
 /mako-menu
 /mako-*
+apps/cli/mako
+apps/cli/mako-menu
 /dist/
 *.exe
 *.exe~
@@ -36,3 +38,24 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Next.js
+apps/landing/.next/
+apps/landing/out/
+apps/landing/.vercel
+apps/landing/node_modules/
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Vercel
+.vercel

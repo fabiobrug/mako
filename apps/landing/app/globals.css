@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'CaskaydiaCove Nerd Font Mono';
+  src: url('/fonts/CaskaydiaCoveNerdFontMono-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CaskaydiaCove NFM';
+  src: url('/fonts/CaskaydiaCoveNerdFontMono-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  /* Colors */
+  --color-background: hsl(220 30% 5%);
+  --color-foreground: hsl(39 30% 85%);
+  
+  --color-card: hsl(220 25% 10%);
+  --color-card-foreground: hsl(39 30% 85%);
+  
+  --color-popover: hsl(220 25% 10%);
+  --color-popover-foreground: hsl(39 30% 85%);
+  
+  --color-primary: hsl(200 78% 56%);
+  --color-primary-foreground: hsl(220 30% 5%);
+  
+  --color-secondary: hsl(220 20% 14%);
+  --color-secondary-foreground: hsl(39 30% 85%);
+  
+  --color-muted: hsl(220 20% 14%);
+  --color-muted-foreground: hsl(39 15% 55%);
+  
+  --color-accent: hsl(200 78% 56%);
+  --color-accent-foreground: hsl(220 30% 5%);
+  
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  
+  --color-success: hsl(105 60% 62%);
+  
+  --color-border: hsl(220 15% 18%);
+  --color-input: hsl(220 15% 18%);
+  --color-ring: hsl(200 78% 56%);
+  
+  --color-code: hsl(220 22% 13%);
+  
+  --color-sidebar-background: hsl(220 25% 8%);
+  --color-sidebar-foreground: hsl(39 30% 85%);
+  --color-sidebar-primary: hsl(200 78% 56%);
+  --color-sidebar-primary-foreground: hsl(220 30% 5%);
+  --color-sidebar-accent: hsl(220 20% 14%);
+  --color-sidebar-accent-foreground: hsl(39 30% 85%);
+  --color-sidebar-border: hsl(220 15% 18%);
+  --color-sidebar-ring: hsl(200 78% 56%);
+  
+  /* Fonts */
+  --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'CaskaydiaCove Nerd Font', var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  
+  /* Border Radius */
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+code,
+pre,
+.font-mono {
+  font-family: 'CaskaydiaCove Nerd Font Mono', 'CaskaydiaCove NFM', monospace !important;
+  font-weight: 600 !important;
+}
+
+/* Force CaskaydiaCove in code blocks */
+pre code {
+  font-family: 'CaskaydiaCove Nerd Font Mono', 'CaskaydiaCove NFM', monospace !important;
+  font-weight: 600 !important;
+  font-feature-settings: "liga" 1, "calt" 1;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
+}
+
+/* Custom cursor for terminal-themed experience */
+* {
+  cursor: default;
+}
+
+a, button, [role="button"] {
+  cursor: pointer;
+}
+
+code, pre {
+  cursor: text;
+}
+
+/* Terminal-style selection */
+::selection {
+  background-color: hsla(200, 78%, 56%, 0.3);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: hsla(200, 78%, 56%, 0.3);
+  color: inherit;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* Smooth transitions for color changes */
+* {
+  transition-property: color, background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Disable transitions for animations and transforms */
+*[class*="motion-"],
+*[style*="transform"],
+*[style*="opacity"] {
+  transition: none !important;
+}
+
+/* Terminal cursor blink animation */
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+.terminal-cursor {
+  animation: blink 1s infinite;
+}
+
+/* Glitch effect for hover states */
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+/* Subtle pulse animation for CTAs */
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: var(--color-border);
+  }
+  50% {
+    border-color: var(--color-primary);
+  }
+}
+
+/* Focus visible styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Mako Ocean - SVG Bubble Background */
+.bubble-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
