@@ -26,17 +26,21 @@ jobs:
           sudo apt-get install -y sqlite3 libsqlite3-dev
       
       - name: Tidy dependencies
+        working-directory: ./apps/cli
         run: go mod tidy
       
       - name: Run tests
+        working-directory: ./apps/cli
         run: go test -v -tags "fts5" ./...
       
       - name: Build
+        working-directory: ./apps/cli
         run: |
           go build -tags "fts5" -o mako ./cmd/mako
           go build -o mako-menu ./cmd/mako-menu
       
       - name: Verify binaries
+        working-directory: ./apps/cli
         run: |
           ./mako version || echo "Version check failed (expected if not in shell)"
           file mako
@@ -56,7 +60,9 @@ jobs:
           go-version: '1.24'
       
       - name: Tidy dependencies
+        working-directory: ./apps/cli
         run: go mod tidy
       
       - name: Run go vet
+        working-directory: ./apps/cli
         run: go vet -tags "fts5" ./...
