@@ -55,9 +55,16 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.0.0
+## What's New in v1.1.7
 
-**🎉 First Stable Release - Production Ready!**
+**🔧 Bug Fixes & Improvements**
+
+- **Fixed version reporting**: Corrected internal version constant to match release version
+- **Improved update error handling**: Better permission error messages when update fails
+- **Fixed PTY output formatting**: Proper line endings (`\r\n`) for update notifications
+- **Removed backup file requirement**: Streamlined update process without `.backup` files
+
+**🎉 Stable Release - Production Ready!**
 
 - **One-line install**: `curl -sSL https://raw.githubusercontent.com/mako-org/mako/dev/scripts/install.sh | bash`
 - **Auto-updates**: Stay current with `mako update`
@@ -390,7 +397,7 @@ Performance:
 
 ## Development Status
 
-**Current Version**: v1.0.0 (2026-02-10) - **First Stable Release!**
+**Current Version**: v1.1.7 (2026-02-11) - **Bug Fixes & Improvements**
 
 ### Implemented Features
 

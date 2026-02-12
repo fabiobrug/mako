@@ -2,6 +2,24 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.1.7] - 2026-02-11
+
+### Fixed
+- **Version constant mismatch** - Updated internal version constant from `1.0.0` to match actual release version
+  - Fixes false "update available" notifications on startup
+  - Resolves version reporting inconsistencies
+- **Update notification formatting** - Fixed PTY line ending issues in update messages
+  - Changed from `\n` to `\r\n` for proper terminal display
+  - Prevents "staircase effect" in update notifications
+- **Update permission handling** - Improved error messages when update fails due to permissions
+  - Removed backup file requirement that caused permission errors
+  - Provides clear instructions to use installation script when permissions are insufficient
+  - Better handling of `sudo` limitations within Mako shell
+
+### Changed
+- Simplified update process by removing `.backup` file creation
+- Enhanced error messaging for permission-denied scenarios during updates
+
 ## [1.0.0] - 2026-02-10
 
 ### Added - Week 12: Production Ready & Distribution
@@ -68,8 +86,8 @@ This is the first stable release of Mako with all core features complete (Weeks 
 #### 📖 Man Page Documentation
 - **Professional docs** - Complete man page with all commands
 - **Offline reference** - `man mako` for full documentation
-- **Includes**:
-  - Command reference
+  - **Includes**:
+    - Command reference
   - Usage examples
   - Configuration options
   - Environment variables
