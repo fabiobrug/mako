@@ -202,6 +202,19 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Supported LLMs Section */}
+          <div className="mb-20">
+            <h2 className="font-mono font-semibold text-2xl text-foreground mb-8">Supported LLMs</h2>
+            <div className="flex flex-wrap justify-center gap-3 max-w-3xl mx-auto">
+              <LLMPill name="Ollama" icon="/ollama-icon.svg" />
+              <LLMPill name="OpenAI" icon="/openai-icon.svg" />
+              <LLMPill name="Anthropic" icon="/claude-ai-icon.svg" />
+              <LLMPill name="Gemini" icon="/google-gemini-icon.svg" />
+              <LLMPill name="OpenRouter" icon="/openrouter-icon.svg" />
+              <LLMPill name="DeepSeek" icon="/deepseek-logo-icon.svg" />
+            </div>
+          </div>
+
           {/* Action Boxes */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
             <ActionBox
@@ -302,3 +315,10 @@ const ActionBox = ({ icon, title, description, href, color }: { icon: React.Reac
     </Component>
   );
 };
+
+const LLMPill = ({ name, icon }: { name: string; icon: string }) => (
+  <div className="bg-code rounded-full border border-border px-5 py-2.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-default hover:shadow-lg hover:shadow-primary/10 flex items-center gap-2.5">
+    <Image src={icon} alt={`${name} icon`} width={20} height={20} className="shrink-0" />
+    <span className="font-mono font-semibold text-foreground text-sm">{name}</span>
+  </div>
+);

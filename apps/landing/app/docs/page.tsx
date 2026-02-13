@@ -346,7 +346,7 @@ const GetStartedSection = () => (
     <ol className="list-decimal list-inside text-muted-foreground space-y-3 mb-6 leading-relaxed">
       <li><strong className="text-foreground">Start Mako</strong> - Wraps around your bash/zsh shell</li>
       <li><strong className="text-foreground">Natural Language</strong> - Type <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">mako ask "compress this video"</code></li>
-      <li><strong className="text-foreground">AI Generation</strong> - Gemini generates the appropriate shell command</li>
+      <li><strong className="text-foreground">AI Generation</strong> - Your configured AI provider generates the appropriate shell command</li>
       <li><strong className="text-foreground">Review & Execute</strong> - Review the command before running it</li>
       <li><strong className="text-foreground">Learn & Improve</strong> - Mako learns your preferences over time</li>
     </ol>
@@ -410,39 +410,82 @@ const InstallSection = () => (
     </motion.h1>
     
     <p className="text-muted-foreground mb-6 leading-relaxed">
-      Mako works on <strong className="text-foreground">Linux</strong> and <strong className="text-foreground">macOS</strong>. You'll need a Gemini API key from <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">Google AI Studio</a>.
+      Mako works on <strong className="text-foreground">Linux</strong> and <strong className="text-foreground">macOS</strong>. Choose from multiple AI providers including local models (Ollama) or cloud services (OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter).
     </p>
 
-    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">One-Line Install (Recommended)</h2>
+    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Option 1: One-Line Install (Recommended)</h2>
     <p className="text-muted-foreground mb-4 leading-relaxed">
-      The easiest way to install Mako is using our installation script:
+      Fast installation with optional environment variable configuration:
     </p>
-    <CodeBlock>{`curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash`}</CodeBlock>
+    <CodeBlock>{`# Basic installation
+curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
+
+# Or install with provider configuration
+LLM_PROVIDER=openai LLM_MODEL=gpt-4o-mini LLM_API_KEY=sk-your-key \\
+curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash`}</CodeBlock>
     
-    <p className="text-muted-foreground mb-4 leading-relaxed">
-      The script will:
+    <p className="text-muted-foreground mb-4 mt-6 leading-relaxed">
+      <strong className="text-foreground">After installation, configure your AI provider:</strong>
+    </p>
+    <CodeBlock>{`# Start Mako
+mako
+
+# Inside Mako shell, configure your provider:
+mako config set llm_provider openai
+mako config set llm_model gpt-4o-mini
+mako config set api_key sk-your-api-key
+
+# Or for Ollama (local):
+mako config set llm_provider ollama
+mako config set llm_model llama3.2
+mako config set llm_base_url http://localhost:11434
+
+# View all settings:
+mako config list`}</CodeBlock>
+
+    <p className="text-muted-foreground mb-4 mt-6 leading-relaxed">
+      <strong className="text-foreground">Supported configuration keys:</strong>
     </p>
     <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6 leading-relaxed">
-      <li>Detect your operating system and architecture</li>
-      <li>Download the latest release</li>
-      <li>Install binaries to <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">/usr/local/bin</code></li>
-      <li>Set up shell integration</li>
-      <li>Guide you through initial configuration</li>
+      <li><code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">llm_provider</code> - AI provider (openai, anthropic, gemini, deepseek, openrouter, ollama)</li>
+      <li><code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">llm_model</code> - Model name (provider-specific)</li>
+      <li><code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">llm_base_url</code> - Base URL (optional, for custom endpoints)</li>
+      <li><code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">api_key</code> - Your API key (not required for Ollama)</li>
     </ul>
 
-    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">From Source</h2>
+    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Option 2: From Source with .env File</h2>
     <p className="text-muted-foreground mb-4 leading-relaxed">
-      If you prefer to build from source:
+      Clone the repository and configure via <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">.env</code> file:
     </p>
     <CodeBlock>{`# Clone the repository
 git clone https://github.com/fabiobrug/mako.git
 cd mako/apps/cli
 
+# Copy and edit configuration
+cp .env.example .env
+nano .env  # Edit with your provider settings
+
 # Build
 make build
 
-# Install (requires sudo)
-make install`}</CodeBlock>
+# Install (optional, requires sudo)
+make install
+
+# Or run directly
+./mako`}</CodeBlock>
+
+    <p className="text-muted-foreground mb-4 mt-6 leading-relaxed">
+      <strong className="text-foreground">Example <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">.env</code> configuration:</strong>
+    </p>
+    <CodeBlock>{`# OpenAI
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o-mini
+LLM_API_KEY=sk-your-key
+
+# Or Ollama (local, free)
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.2
+LLM_API_BASE=http://localhost:11434`}</CodeBlock>
 
     <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Verify Installation</h2>
     <p className="text-muted-foreground mb-4 leading-relaxed">
@@ -454,11 +497,21 @@ mako
 # Inside Mako shell, try:
 mako ask "find files larger than 100MB"
 mako history
+mako health    # Check configuration status
 mako help`}</CodeBlock>
 
-    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Post-Installation</h2>
+    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Configuration Priority</h2>
     <p className="text-muted-foreground mb-4 leading-relaxed">
-      After installation, you'll need to configure your Gemini API key. See the <button onClick={() => window.dispatchEvent(new CustomEvent('changeSection', { detail: 'agent-config' }))} className="text-primary hover:text-primary/80 underline">Agent Config</button> section for details.
+      Mako checks for configuration in this order:
+    </p>
+    <ol className="list-decimal list-inside text-muted-foreground space-y-2 mb-6 leading-relaxed">
+      <li><strong className="text-foreground">Environment variables</strong> (<code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">.env</code> file in <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">apps/cli/</code>)</li>
+      <li><strong className="text-foreground">Config file</strong> (<code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">~/.mako/config.json</code>) - set via <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">mako config set</code></li>
+      <li><strong className="text-foreground">Default values</strong> (Gemini provider)</li>
+    </ol>
+
+    <p className="text-muted-foreground mb-4 leading-relaxed">
+      For more details on configuring AI providers, see the <button onClick={() => window.dispatchEvent(new CustomEvent('changeSection', { detail: 'agent-config' }))} className="text-primary hover:text-primary/80 underline">Agent Config</button> section.
     </p>
   </motion.article>
 );
@@ -477,58 +530,177 @@ const AgentConfigSection = () => (
       Agent Config
     </motion.h1>
     
-    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Getting Your API Key</h2>
-    <p className="text-muted-foreground mb-4 leading-relaxed">
-      Mako uses Google's Gemini AI for command generation and semantic search. You'll need a free API key from Google AI Studio.
+    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Supported AI Providers</h2>
+    <p className="text-muted-foreground mb-6 leading-relaxed">
+      Mako supports multiple AI providers. Configure your preferred provider using environment variables or CLI commands:
     </p>
+
+    <div className="overflow-x-auto mb-8">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="border-b border-border">
+            <th className="text-left py-3 px-4 font-mono text-foreground">Provider</th>
+            <th className="text-left py-3 px-4 font-mono text-foreground">Type</th>
+            <th className="text-left py-3 px-4 font-mono text-foreground">Cost</th>
+            <th className="text-left py-3 px-4 font-mono text-foreground">Best For</th>
+          </tr>
+        </thead>
+        <tbody className="text-muted-foreground">
+          <tr className="border-b border-border">
+            <td className="py-3 px-4 font-mono">Ollama</td>
+            <td className="py-3 px-4">Local</td>
+            <td className="py-3 px-4 text-success">Free</td>
+            <td className="py-3 px-4">Privacy, offline use, no API costs</td>
+          </tr>
+          <tr className="border-b border-border">
+            <td className="py-3 px-4 font-mono">OpenAI</td>
+            <td className="py-3 px-4">Cloud</td>
+            <td className="py-3 px-4">Paid</td>
+            <td className="py-3 px-4">Best quality, GPT-4o models</td>
+          </tr>
+          <tr className="border-b border-border">
+            <td className="py-3 px-4 font-mono">Anthropic</td>
+            <td className="py-3 px-4">Cloud</td>
+            <td className="py-3 px-4">Paid</td>
+            <td className="py-3 px-4">Claude models, great reasoning</td>
+          </tr>
+          <tr className="border-b border-border">
+            <td className="py-3 px-4 font-mono">Gemini</td>
+            <td className="py-3 px-4">Cloud</td>
+            <td className="py-3 px-4 text-success">Free tier</td>
+            <td className="py-3 px-4">Default option, good balance</td>
+          </tr>
+          <tr className="border-b border-border">
+            <td className="py-3 px-4 font-mono">OpenRouter</td>
+            <td className="py-3 px-4">Cloud</td>
+            <td className="py-3 px-4">Paid</td>
+            <td className="py-3 px-4">Access to multiple models</td>
+          </tr>
+          <tr className="border-b border-border">
+            <td className="py-3 px-4 font-mono">DeepSeek</td>
+            <td className="py-3 px-4">Cloud</td>
+            <td className="py-3 px-4">Paid</td>
+            <td className="py-3 px-4">Cost-effective alternative</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     
-    <ol className="list-decimal list-inside text-muted-foreground space-y-3 mb-6 leading-relaxed">
-      <li>Visit <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">Google AI Studio</a></li>
-      <li>Sign in with your Google account</li>
-      <li>Click "Get API Key" or "Create API Key"</li>
-      <li>Copy your API key</li>
-    </ol>
+    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Example Configurations</h2>
 
-    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Configuration</h2>
+    <h3 className="font-mono text-lg font-semibold text-foreground mt-6 mb-3">Ollama (Local, Free)</h3>
+    <CodeBlock>{`LLM_PROVIDER=ollama
+LLM_MODEL=llama3.2
+LLM_API_BASE=http://localhost:11434`}</CodeBlock>
+
+    <h3 className="font-mono text-lg font-semibold text-foreground mt-6 mb-3">OpenAI</h3>
+    <CodeBlock>{`LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o-mini
+LLM_API_KEY=sk-your-api-key-here`}</CodeBlock>
+
+    <h3 className="font-mono text-lg font-semibold text-foreground mt-6 mb-3">Anthropic (Claude)</h3>
+    <CodeBlock>{`LLM_PROVIDER=anthropic
+LLM_MODEL=claude-3-5-haiku-20241022
+LLM_API_KEY=sk-ant-your-key`}</CodeBlock>
+
+    <h3 className="font-mono text-lg font-semibold text-foreground mt-6 mb-3">Google Gemini</h3>
+    <CodeBlock>{`LLM_PROVIDER=gemini
+LLM_MODEL=gemini-2.5-flash
+LLM_API_KEY=your-gemini-key`}</CodeBlock>
+
+    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Using Ollama (Local Models)</h2>
     <p className="text-muted-foreground mb-4 leading-relaxed">
-      During first run, Mako will prompt you for your API key. You can also configure it manually:
+      Ollama allows you to run AI models locally on your machine:
     </p>
+    <CodeBlock>{`# Install Ollama
+curl https://ollama.ai/install.sh | sh
 
-    <h3 className="font-mono text-lg font-semibold text-foreground mt-6 mb-3">Environment Variable (Recommended)</h3>
-    <CodeBlock>{`# Add to your ~/.bashrc or ~/.zshrc
-export GEMINI_API_KEY="your-api-key-here"
+# Pull a model
+ollama pull llama3.2
 
-# Reload your shell configuration
-source ~/.bashrc  # or source ~/.zshrc`}</CodeBlock>
+# Configure Mako
+mako config set llm_provider ollama
+mako config set llm_model llama3.2
+mako config set llm_base_url http://localhost:11434
 
-    <h3 className="font-mono text-lg font-semibold text-foreground mt-6 mb-3">Configuration File</h3>
+# Start Mako
+mako`}</CodeBlock>
+
+    <p className="text-muted-foreground mb-4 leading-relaxed">
+      <strong className="text-foreground">Benefits of Ollama:</strong>
+    </p>
+    <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6 leading-relaxed">
+      <li>✅ Completely free</li>
+      <li>✅ Works offline</li>
+      <li>✅ Privacy - data never leaves your machine</li>
+      <li>✅ No API rate limits</li>
+    </ul>
+
+    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Configuration Methods</h2>
+
+    <h3 className="font-mono text-lg font-semibold text-foreground mt-6 mb-3">Via CLI Commands</h3>
+    <CodeBlock>{`# Set provider and credentials
+mako config set llm_provider openai
+mako config set llm_model gpt-4o-mini
+mako config set api_key sk-your-api-key
+
+# View current configuration
+mako config list
+
+# Check provider status
+mako health`}</CodeBlock>
+
+    <h3 className="font-mono text-lg font-semibold text-foreground mt-6 mb-3">Via Configuration File</h3>
     <p className="text-muted-foreground mb-4 leading-relaxed">
       Mako stores its configuration in <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">~/.mako/config.json</code>:
     </p>
     <CodeBlock language="json">{`{
+  "llm_provider": "openai",
+  "llm_model": "gpt-4o-mini",
   "api_key": "your-api-key-here",
-  "model": "gemini-2.0-flash-exp",
-  "embedding_model": "text-embedding-004",
+  "llm_base_url": "https://api.openai.com/v1",
   "max_history": 1000,
   "auto_suggest": true,
   "safety_checks": true
 }`}</CodeBlock>
 
-    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">AI Models</h2>
-    <p className="text-muted-foreground mb-4 leading-relaxed">
-      Mako uses two Gemini models:
-    </p>
+    <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Getting API Keys</h2>
     
-    <div className="bg-code border border-border rounded-lg p-6 mb-6">
-      <h4 className="font-mono text-base font-semibold text-foreground mb-3">gemini-2.0-flash-exp</h4>
-      <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-        Used for command generation and natural language understanding. Fast and efficient for real-time command assistance.
-      </p>
-      
-      <h4 className="font-mono text-base font-semibold text-foreground mb-3">text-embedding-004</h4>
-      <p className="text-muted-foreground text-sm leading-relaxed">
-        Used for semantic search in command history. Converts commands to vector embeddings for intelligent search.
-      </p>
+    <div className="space-y-4">
+      <div className="bg-code border border-border rounded-lg p-4">
+        <h4 className="font-mono text-sm font-semibold text-foreground mb-2">OpenAI</h4>
+        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 text-sm">
+          platform.openai.com/api-keys
+        </a>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-4">
+        <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Anthropic</h4>
+        <a href="https://console.anthropic.com/account/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 text-sm">
+          console.anthropic.com/account/keys
+        </a>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-4">
+        <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Google Gemini</h4>
+        <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 text-sm">
+          ai.google.dev
+        </a>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-4">
+        <h4 className="font-mono text-sm font-semibold text-foreground mb-2">OpenRouter</h4>
+        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 text-sm">
+          openrouter.ai/keys
+        </a>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-4">
+        <h4 className="font-mono text-sm font-semibold text-foreground mb-2">DeepSeek</h4>
+        <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 text-sm">
+          platform.deepseek.com/api_keys
+        </a>
+      </div>
     </div>
 
     <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Configuration Options</h2>
@@ -720,7 +892,7 @@ mako ask "backup database" --alternatives 3`}</CodeBlock>
                 <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                   <p className="font-mono text-sm text-foreground mb-2">Invalid API Key</p>
                   <CodeBlock>{`Error: Authentication failed
-Solution: Set your GEMINI_API_KEY environment variable`}</CodeBlock>
+Solution: Set your API key via: mako config set api_key your-key-here`}</CodeBlock>
                 </div>
 
                 <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
@@ -1355,9 +1527,9 @@ mako health --reinstall-shell`}</CodeBlock>
                 <div className="bg-code border border-border rounded-lg p-4">
                   <h4 className="font-mono text-sm font-semibold text-foreground mb-2">ERROR: API Key Not Found</h4>
                   <CodeBlock>{`[FAIL] API Key not configured
-Solution: Set GEMINI_API_KEY environment variable
-  export GEMINI_API_KEY="your-key-here"
-Or run: mako configure --api-key`}</CodeBlock>
+Solution: Configure your API key
+  mako config set api_key your-key-here
+Or set environment variable for your provider`}</CodeBlock>
                 </div>
 
                 <div className="bg-code border border-border rounded-lg p-4">
@@ -1719,16 +1891,12 @@ const ReferenceSection = () => (
             <td className="py-3 px-4 font-mono">SQLite with FTS5 (modernc.org/sqlite)</td>
           </tr>
           <tr className="border-b border-border">
-            <td className="py-3 px-4">AI Provider</td>
-            <td className="py-3 px-4 font-mono">Google Gemini API</td>
-          </tr>
-          <tr className="border-b border-border">
-            <td className="py-3 px-4">Command Model</td>
-            <td className="py-3 px-4 font-mono">gemini-2.0-flash-exp</td>
+            <td className="py-3 px-4">AI Providers</td>
+            <td className="py-3 px-4 font-mono">OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Ollama</td>
           </tr>
           <tr className="border-b border-border">
             <td className="py-3 px-4">Embeddings</td>
-            <td className="py-3 px-4 font-mono">text-embedding-004</td>
+            <td className="py-3 px-4 font-mono">Provider-specific (Gemini, OpenAI, Ollama)</td>
           </tr>
           <tr className="border-b border-border">
             <td className="py-3 px-4">Build System</td>
@@ -1742,9 +1910,30 @@ const ReferenceSection = () => (
     
     <div className="space-y-4">
       <div className="bg-code border border-border rounded-lg p-4">
-        <code className="font-mono text-primary text-sm">GEMINI_API_KEY</code>
+        <code className="font-mono text-primary text-sm">LLM_PROVIDER</code>
         <p className="text-muted-foreground text-sm leading-relaxed mt-2">
-          Your Gemini API key for AI features
+          AI provider to use (openai, anthropic, gemini, deepseek, openrouter, ollama)
+        </p>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-4">
+        <code className="font-mono text-primary text-sm">LLM_MODEL</code>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+          Model name for your chosen provider
+        </p>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-4">
+        <code className="font-mono text-primary text-sm">LLM_API_KEY</code>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+          Your API key for the chosen provider (not needed for Ollama)
+        </p>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-4">
+        <code className="font-mono text-primary text-sm">LLM_API_BASE</code>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+          Base URL for API calls (optional, for custom endpoints or Ollama)
         </p>
       </div>
       
@@ -1816,8 +2005,8 @@ const HelpSection = () => (
         <p className="text-muted-foreground text-sm leading-relaxed mb-3">
           Verify your API key:
         </p>
-        <CodeBlock>{`# Check if environment variable is set
-echo $GEMINI_API_KEY
+        <CodeBlock>{`# Check current configuration
+mako config list
 
 # Or check config file
 cat ~/.mako/config.json
@@ -1846,8 +2035,8 @@ mako`}</CodeBlock>
         </p>
         <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1">
           <li>Check your internet connection</li>
-          <li>Verify API quota at Google AI Studio</li>
-          <li>Consider using a different Gemini model</li>
+          <li>Verify API quota with your provider</li>
+          <li>Consider using a faster model or switching to local Ollama</li>
         </ul>
       </div>
 
@@ -1873,7 +2062,7 @@ mako
       <div>
         <h3 className="font-mono text-lg font-semibold text-foreground mb-2">Is my command history private?</h3>
         <p className="text-muted-foreground leading-relaxed">
-          Your command history is stored locally in <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">~/.mako/mako.db</code>. Only command prompts are sent to Gemini for AI processing. Output and sensitive data stay on your machine.
+          Your command history is stored locally in <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">~/.mako/mako.db</code>. Only command prompts are sent to your chosen AI provider for processing. Output and sensitive data stay on your machine. For maximum privacy, use Ollama (local models).
         </p>
       </div>
 
@@ -1887,14 +2076,14 @@ mako
       <div>
         <h3 className="font-mono text-lg font-semibold text-foreground mb-2">Can I use my own AI model?</h3>
         <p className="text-muted-foreground leading-relaxed">
-          Currently, Mako only supports Gemini models. Support for other AI providers (OpenAI, Anthropic, local models) is planned for future releases.
+          Yes! Mako supports multiple AI providers including OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, and local models via Ollama. You can configure your preferred provider using <code className="font-mono text-primary bg-code px-1.5 py-0.5 rounded text-sm">mako config set</code>.
         </p>
       </div>
 
       <div>
         <h3 className="font-mono text-lg font-semibold text-foreground mb-2">How much does it cost?</h3>
         <p className="text-muted-foreground leading-relaxed">
-          Mako itself is free and open source. You'll need a Gemini API key, which has a generous free tier (60 requests per minute). Most users stay within the free tier.
+          Mako itself is free and open source. Costs depend on your AI provider: Ollama is completely free (local), Gemini has a generous free tier, while OpenAI, Anthropic, and others are pay-per-use. Most users with cloud providers stay within free tiers.
         </p>
       </div>
 
