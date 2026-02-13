@@ -147,7 +147,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "help":
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v1.2.0\n"), nil
+			return true, fmt.Sprintf("v1.3.0\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
 		case "clear":
@@ -1506,11 +1506,8 @@ func handleHealth(db *database.DB) (string, error) {
 		return "\r\n✗ Database not available - cannot perform health check\r\n\r\n", nil
 	}
 	
-	// Get API key from environment
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	
-	// Create health checker
-	checker := health.NewChecker(db, embeddingCache, apiKey)
+	// Create health checker (it will get provider config from environment)
+	checker := health.NewChecker(db, embeddingCache, "")
 	
 	// Run health check
 	report, err := checker.Check()

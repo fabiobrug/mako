@@ -115,9 +115,19 @@ Mako requires a Google Gemini API key to work. Get yours for free:
 mako config set api_key YOUR_API_KEY
 ```
 
-Alternatively, you can set the `GEMINI_API_KEY` environment variable:
+Alternatively, you can use environment variables or create a `.env` file:
 
 ```bash
+# Using environment variables
+export LLM_PROVIDER=gemini
+export LLM_API_KEY=your_api_key_here
+
+# Or create .env file in apps/cli/
+cd apps/cli
+cp .env.example .env
+# Edit .env and set your provider
+
+# Legacy support (still works)
 export GEMINI_API_KEY=your_api_key_here
 ```
 

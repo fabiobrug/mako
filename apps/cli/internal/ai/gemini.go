@@ -12,41 +12,60 @@ import (
 	"github.com/fabiobrug/mako.git/internal/config"
 )
 
-const geminiAPIURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-
-type GeminiClient struct {
+type GeminiProvider struct {
 	apiKey string
+	model  string
 	client *http.Client
 }
 
-func NewGeminiClient() (*GeminiClient, error) {
-	// Try environment variable first
-	apiKey := os.Getenv("GEMINI_API_KEY")
+// NewGeminiProvider creates a new Gemini AI provider
+func NewGeminiProvider(cfg *ProviderConfig) (*GeminiProvider, error) {
+	apiKey := cfg.APIKey
 	
-	// If not in env, try loading from config
+	// Fallback to environment variable
 	if apiKey == "" {
-		cfg, err := config.LoadConfig()
-		if err == nil && cfg.APIKey != "" {
-			apiKey = cfg.APIKey
+		apiKey = os.Getenv("GEMINI_API_KEY")
+	}
+	
+	// Fallback to config file
+	if apiKey == "" {
+		fileCfg, err := config.LoadConfig()
+		if err == nil && fileCfg.APIKey != "" {
+			apiKey = fileCfg.APIKey
 		}
 	}
 	
 	if apiKey == "" {
-		return nil, fmt.Errorf("API key not found. Set it with: mako config set api_key <your-key>")
+		return nil, fmt.Errorf("Gemini API key not found. Set LLM_API_KEY in .env or use: mako config set api_key <your-key>")
+	}
+	
+	// Default model if not specified
+	model := cfg.Model
+	if model == "" {
+		model = "gemini-2.5-flash"
 	}
 
-	return &GeminiClient{
+	return &GeminiProvider{
 		apiKey: apiKey,
+		model:  model,
 		client: &http.Client{},
 	}, nil
 }
 
-func (g *GeminiClient) GenerateCommand(userRequest string, context SystemContext) (string, error) {
+// NewGeminiClient creates a legacy Gemini client for backward compatibility
+// Deprecated: Use NewGeminiProvider instead
+func NewGeminiClient() (*GeminiProvider, error) {
+	return NewGeminiProvider(&ProviderConfig{
+		Provider: "gemini",
+	})
+}
+
+func (g *GeminiProvider) GenerateCommand(userRequest string, context SystemContext) (string, error) {
 	return g.GenerateCommandWithConversation(userRequest, context, nil)
 }
 
 // GenerateCommandWithConversation generates a command with conversation context
-func (g *GeminiClient) GenerateCommandWithConversation(userRequest string, context SystemContext, conversation *ConversationHistory) (string, error) {
+func (g *GeminiProvider) GenerateCommandWithConversation(userRequest string, context SystemContext, conversation *ConversationHistory) (string, error) {
 	prompt := g.buildPromptWithConversation(userRequest, context, conversation)
 
 	requestBody := map[string]interface{}{
@@ -68,7 +87,8 @@ func (g *GeminiClient) GenerateCommandWithConversation(userRequest string, conte
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s?key=%s", geminiAPIURL, g.apiKey)
+	apiURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", g.model)
+	url := fmt.Sprintf("%s?key=%s", apiURL, g.apiKey)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
@@ -115,7 +135,7 @@ func (g *GeminiClient) GenerateCommandWithConversation(userRequest string, conte
 	return command, nil
 }
 
-func (g *GeminiClient) buildPromptWithConversation(userRequest string, context SystemContext, conversation *ConversationHistory) string {
+func (g *GeminiProvider) buildPromptWithConversation(userRequest string, context SystemContext, conversation *ConversationHistory) string {
 	var promptBuild strings.Builder
 
 	// Include conversation history if available
@@ -134,12 +154,12 @@ func (g *GeminiClient) buildPromptWithConversation(userRequest string, context S
 	return g.buildPromptCore(userRequest, context, &promptBuild)
 }
 
-func (g *GeminiClient) buildPrompt(userRequest string, context SystemContext) string {
+func (g *GeminiProvider) buildPrompt(userRequest string, context SystemContext) string {
 	var promptBuild strings.Builder
 	return g.buildPromptCore(userRequest, context, &promptBuild)
 }
 
-func (g *GeminiClient) buildPromptCore(userRequest string, context SystemContext, promptBuild *strings.Builder) string {
+func (g *GeminiProvider) buildPromptCore(userRequest string, context SystemContext, promptBuild *strings.Builder) string {
 	promptBuild.WriteString("You are a shell command generator. Your ONLY job is to output a single shell command.\n\n")
 	promptBuild.WriteString("RULES:\n")
 	promptBuild.WriteString("- Output ONLY the command, nothing else\n")
@@ -238,7 +258,7 @@ func (g *GeminiClient) buildPromptCore(userRequest string, context SystemContext
 	return promptBuild.String()
 }
 
-func (g *GeminiClient) cleanCommand(command string) string {
+func (g *GeminiProvider) cleanCommand(command string) string {
 	command = strings.TrimPrefix(command, "```bash")
 	command = strings.TrimPrefix(command, "```sh")
 	command = strings.TrimPrefix(command, "```")
@@ -249,7 +269,7 @@ func (g *GeminiClient) cleanCommand(command string) string {
 	return command
 }
 
-func (g *GeminiClient) ExplainError(failedCommand string, errorOutput string, context SystemContext) (string, error) {
+func (g *GeminiProvider) ExplainError(failedCommand string, errorOutput string, context SystemContext) (string, error) {
 	prompt := fmt.Sprintf(`Shell debugging assistant. Analyze this error briefly.
 
 System: %s | Shell: %s | Dir: %s
@@ -288,7 +308,8 @@ Be concise and actionable.`,
 		return "", err
 	}
 
-	url := fmt.Sprintf("%s?key=%s", geminiAPIURL, g.apiKey)
+	apiURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", g.model)
+	url := fmt.Sprintf("%s?key=%s", apiURL, g.apiKey)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
@@ -342,7 +363,7 @@ Be concise and actionable.`,
 }
 
 // ExplainCommand generates a human-readable explanation of what a command does
-func (g *GeminiClient) ExplainCommand(command string, context SystemContext) (string, error) {
+func (g *GeminiProvider) ExplainCommand(command string, context SystemContext) (string, error) {
 	prompt := fmt.Sprintf(`Explain this shell command in simple, clear terms.
 
 System: %s | Shell: %s | Dir: %s
@@ -381,7 +402,8 @@ Be concise and user-friendly. If there are security concerns, highlight them cle
 		return "", err
 	}
 
-	url := fmt.Sprintf("%s?key=%s", geminiAPIURL, g.apiKey)
+	apiURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", g.model)
+	url := fmt.Sprintf("%s?key=%s", apiURL, g.apiKey)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
@@ -427,7 +449,7 @@ Be concise and user-friendly. If there are security concerns, highlight them cle
 }
 
 // SuggestAlternatives generates alternative commands that accomplish the same goal
-func (g *GeminiClient) SuggestAlternatives(command string, context SystemContext) (string, error) {
+func (g *GeminiProvider) SuggestAlternatives(command string, context SystemContext) (string, error) {
 	prompt := fmt.Sprintf(`Given this shell command, suggest 2-3 alternative ways to accomplish the same goal.
 
 System: %s | Shell: %s | Dir: %s
@@ -468,7 +490,8 @@ Be concise and practical.`,
 		return "", err
 	}
 
-	url := fmt.Sprintf("%s?key=%s", geminiAPIURL, g.apiKey)
+	apiURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", g.model)
+	url := fmt.Sprintf("%s?key=%s", apiURL, g.apiKey)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err

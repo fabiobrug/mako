@@ -2,6 +2,95 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.3.0] - 2026-02-13
+
+### Added - Multi-Provider Support 🎉
+
+**Major Feature: Multiple AI Provider Support**
+
+Mako now supports 6 different AI providers, giving you full control over which AI service powers your shell assistant:
+
+#### Supported Providers
+- **Ollama** (Local) - Run AI models on your machine for free, completely private
+- **OpenAI** (Cloud) - GPT-4 and GPT-4o models for best quality
+- **Anthropic** (Cloud) - Claude models with excellent reasoning capabilities
+- **Google Gemini** (Cloud) - Default provider, free tier available
+- **OpenRouter** (Cloud) - Access to multiple models through one API
+- **DeepSeek** (Cloud) - Cost-effective alternative
+
+#### New Files
+- `.env.example` - Configuration template with examples for all providers
+- `internal/ai/provider.go` - Provider interface and factory pattern
+- `internal/ai/openai.go` - OpenAI/GPT integration
+- `internal/ai/ollama.go` - Local Ollama integration
+- `internal/ai/anthropic.go` - Claude integration
+- `internal/ai/openrouter.go` - OpenRouter integration
+- `internal/ai/deepseek.go` - DeepSeek integration
+- `docs/SETUP.md` - Comprehensive setup guide for all providers
+- `docs/ADDING_PROVIDERS.md` - Developer guide for adding new providers
+
+#### Configuration System
+- **Environment Variables**:
+  - `LLM_PROVIDER` - Choose your AI provider (openai, anthropic, gemini, deepseek, openrouter, ollama)
+  - `LLM_MODEL` - Specify the model to use
+  - `LLM_API_KEY` - Your API key (not required for Ollama)
+  - `LLM_API_BASE` - Custom base URL (optional)
+- **Separate Embedding Configuration** - Use different providers for embeddings vs command generation
+  - `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_API_KEY`, `EMBEDDING_API_BASE`
+
+#### Quick Setup
+```bash
+# Navigate to CLI directory
+cd apps/cli
+
+# Copy configuration template
+cp .env.example .env
+
+# Edit and set your preferred provider
+nano .env
+
+# Example configurations:
+
+# Ollama (Local, Free)
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.2
+LLM_API_BASE=http://localhost:11434
+
+# OpenAI
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o-mini
+LLM_API_KEY=sk-your-key
+
+# Anthropic (Claude)
+LLM_PROVIDER=anthropic
+LLM_MODEL=claude-3-5-haiku-20241022
+LLM_API_KEY=sk-ant-your-key
+```
+
+### Changed
+- **Refactored AI Integration** - Gemini provider now implements common `AIProvider` interface
+- **Enhanced Health Command** - `mako health` now shows configured provider and model instead of just API key status
+- **Updated First-Run Setup** - No longer asks for Gemini API key specifically; guides users to setup guide for multi-provider configuration
+- **Config Structure** - Added `llm_provider`, `llm_model`, and `llm_base_url` fields to config
+
+### Improved
+- **Documentation** - Extensive guides for setup and provider configuration
+- **Backward Compatibility** - Existing `GEMINI_API_KEY` and `api_key` config still work
+- **Privacy Options** - Ollama allows running AI completely local and offline
+- **Cost Optimization** - Mix local embeddings (Ollama) with cloud LLMs
+
+### Developer
+- Clean provider interface for easy addition of new AI services
+- Factory pattern for provider instantiation
+- Comprehensive developer guide for adding custom providers
+
+### Backward Compatibility
+✅ **100% backward compatible** - Existing Mako installations continue working without changes:
+- Default provider remains Gemini
+- Legacy `GEMINI_API_KEY` environment variable still works
+- Existing `config.json` with `api_key` field is supported
+- No breaking changes to commands or workflow
+
 ## [1.1.7] - 2026-02-11
 
 ### Fixed

@@ -11,26 +11,50 @@ import (
 	"os"
 )
 
-const embedAPIURL = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent"
-
-type EmbeddingService struct {
+type GeminiEmbeddingProvider struct {
 	apiKey string
+	model  string
 	client *http.Client
 }
 
-func NewEmbeddingService() (*EmbeddingService, error) {
-	apiKey := os.Getenv("GEMINI_API_KEY")
+// NewGeminiEmbeddingProvider creates a new Gemini embedding provider
+func NewGeminiEmbeddingProvider(cfg *ProviderConfig) (*GeminiEmbeddingProvider, error) {
+	apiKey := cfg.APIKey
+	
+	// Fallback to environment variable
 	if apiKey == "" {
-		return nil, fmt.Errorf("GEMINI_API_KEY not set")
+		apiKey = os.Getenv("GEMINI_API_KEY")
+	}
+	
+	if apiKey == "" {
+		return nil, fmt.Errorf("Gemini API key not found. Set GEMINI_API_KEY or EMBEDDING_API_KEY")
+	}
+	
+	// Default model if not specified
+	model := cfg.Model
+	if model == "" {
+		model = "text-embedding-004"
 	}
 
-	return &EmbeddingService{
+	return &GeminiEmbeddingProvider{
 		apiKey: apiKey,
+		model:  model,
 		client: &http.Client{},
 	}, nil
 }
 
-func (e *EmbeddingService) Embed(text string) ([]float32, error) {
+// EmbeddingService is deprecated, kept for backward compatibility
+type EmbeddingService = GeminiEmbeddingProvider
+
+// NewEmbeddingService creates a legacy embedding service
+// Deprecated: Use NewEmbeddingProvider instead
+func NewEmbeddingService() (*GeminiEmbeddingProvider, error) {
+	return NewGeminiEmbeddingProvider(&ProviderConfig{
+		Provider: "gemini",
+	})
+}
+
+func (e *GeminiEmbeddingProvider) Embed(text string) ([]float32, error) {
 	requestBody := map[string]interface{}{
 		"content": map[string]interface{}{
 			"parts": []map[string]interface{}{
@@ -44,6 +68,7 @@ func (e *EmbeddingService) Embed(text string) ([]float32, error) {
 		return nil, err
 	}
 
+	embedAPIURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent", e.model)
 	url := fmt.Sprintf("%s?key=%s", embedAPIURL, e.apiKey)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -81,8 +106,8 @@ func (e *EmbeddingService) Embed(text string) ([]float32, error) {
 }
 
 // GenerateEmbedding generates an embedding and returns it as bytes
-// This method satisfies the database.EmbeddingService interface
-func (e *EmbeddingService) GenerateEmbedding(text string) ([]byte, error) {
+// This method satisfies the EmbeddingProvider interface
+func (e *GeminiEmbeddingProvider) GenerateEmbedding(text string) ([]byte, error) {
 	vec, err := e.Embed(text)
 	if err != nil {
 		return nil, err

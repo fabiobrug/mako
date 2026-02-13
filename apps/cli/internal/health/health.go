@@ -132,24 +132,57 @@ func (c *Checker) checkDatabase() ComponentHealth {
 // checkAPIKey verifies API key is set
 func (c *Checker) checkAPIKey() ComponentHealth {
 	health := ComponentHealth{
-		Name:    "API Key",
+		Name:    "AI Provider",
 		Details: make(map[string]interface{}),
 	}
 
-	if c.apiKey == "" {
+	// Get provider configuration
+	provider := os.Getenv("LLM_PROVIDER")
+	if provider == "" {
+		provider = "gemini" // Default
+	}
+	
+	model := os.Getenv("LLM_MODEL")
+	if model == "" {
+		model = "default"
+	}
+	
+	apiKey := os.Getenv("LLM_API_KEY")
+	if apiKey == "" {
+		apiKey = os.Getenv("GEMINI_API_KEY") // Legacy fallback
+	}
+	
+	health.Details["provider"] = provider
+	health.Details["model"] = model
+
+	// Ollama doesn't require API key
+	if provider == "ollama" {
+		baseURL := os.Getenv("LLM_API_BASE")
+		if baseURL == "" {
+			baseURL = "http://localhost:11434"
+		}
+		health.Status = StatusOK
+		health.Message = fmt.Sprintf("Using %s (local, model: %s)", provider, model)
+		health.Details["base_url"] = baseURL
+		return health
+	}
+
+	// Check API key for cloud providers
+	if apiKey == "" {
 		health.Status = StatusError
-		health.Message = "GEMINI_API_KEY not set"
+		health.Message = fmt.Sprintf("API key not set for %s provider", provider)
+		health.Details["help"] = "Set LLM_API_KEY in .env or use: cp .env.example .env"
 		return health
 	}
 
 	// Basic validation (not a real API call to save quota)
-	if len(c.apiKey) < 20 {
+	if len(apiKey) < 20 {
 		health.Status = StatusWarning
-		health.Message = "API key looks invalid (too short)"
+		health.Message = fmt.Sprintf("Using %s - API key looks invalid (too short)", provider)
 	} else {
 		health.Status = StatusOK
-		health.Message = "Valid (not verified with API)"
-		health.Details["key_length"] = len(c.apiKey)
+		health.Message = fmt.Sprintf("Using %s (model: %s)", provider, model)
+		health.Details["key_length"] = len(apiKey)
 	}
 
 	return health

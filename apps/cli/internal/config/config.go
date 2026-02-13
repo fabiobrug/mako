@@ -11,7 +11,10 @@ import (
 // Config represents Mako's configuration
 type Config struct {
 	Version            string `json:"version"`
-	APIKey             string `json:"api_key,omitempty"`
+	APIKey             string `json:"api_key,omitempty"` // Legacy field, kept for backward compatibility
+	LLMProvider        string `json:"llm_provider"`
+	LLMModel           string `json:"llm_model,omitempty"`
+	LLMBaseURL         string `json:"llm_base_url,omitempty"`
 	Theme              string `json:"theme"`
 	CacheSize          int    `json:"cache_size"`
 	Telemetry          bool   `json:"telemetry"`
@@ -25,6 +28,9 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Version:            "1.0",
+		LLMProvider:        "gemini", // Default to Gemini for backward compatibility
+		LLMModel:           "",       // Use provider's default model
+		LLMBaseURL:         "",       // Use provider's default base URL
 		Theme:              "ocean",
 		CacheSize:          10000,
 		Telemetry:          false,

@@ -3,10 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"strings"
-	"syscall"
-
-	"golang.org/x/term"
 )
 
 // IsFirstRun checks if this is the first time Mako is being run
@@ -36,30 +32,30 @@ func RunFirstTimeSetup() error {
 		return fmt.Errorf("failed to create .mako directory: %w", err)
 	}
 
-	// Step 1: API Key Setup
-	fmt.Printf("%s━━━━━━━━━━━━━━━━%s\n", dimBlue, reset)
-	fmt.Printf("%sStep 1: API Key%s\n", lightBlue, reset)
-	fmt.Printf("%s━━━━━━━━━━━━━━━━%s\n\n", dimBlue, reset)
-	fmt.Printf("%sMako uses Google's Gemini API (free tier available)%s\n", dimBlue, reset)
-	fmt.Printf("%sGet your key: %shttps://ai.google.dev/%s\n\n", dimBlue, cyan, reset)
-
-	apiKey, err := promptForAPIKey()
-	if err != nil {
-		return fmt.Errorf("failed to get API key: %w", err)
-	}
-
-	// Create and save config
+	// Create default config
 	config := DefaultConfig()
-	if apiKey != "" {
-		config.APIKey = apiKey
-		fmt.Printf("%s✓ API key saved!%s\n\n", lightBlue, reset)
-	} else {
-		fmt.Printf("%s⚠  You can set it later: mako config set api_key YOUR_KEY%s\n\n", dimBlue, reset)
-	}
-
 	if err := config.Save(); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
+
+	// Step 1: AI Provider Setup
+	fmt.Printf("%s━━━━━━━━━━━━━━━━━━━━━━━%s\n", dimBlue, reset)
+	fmt.Printf("%sStep 1: AI Provider Setup%s\n", lightBlue, reset)
+	fmt.Printf("%s━━━━━━━━━━━━━━━━━━━━━━━%s\n\n", dimBlue, reset)
+	fmt.Printf("%sMako supports multiple AI providers:%s\n", dimBlue, reset)
+	fmt.Printf("  • %sOllama%s - Local, free, private\n", cyan, reset)
+	fmt.Printf("  • %sOpenAI%s - GPT models, best quality\n", cyan, reset)
+	fmt.Printf("  • %sAnthropic%s - Claude models\n", cyan, reset)
+	fmt.Printf("  • %sGemini%s - Google's models (free tier)\n", cyan, reset)
+	fmt.Printf("  • %sDeepSeek / OpenRouter%s - Cost-effective alternatives\n\n", cyan, reset)
+	
+	fmt.Printf("%sTo configure your provider:%s\n", dimBlue, reset)
+	fmt.Printf("  1. Navigate: %scd apps/cli%s\n", cyan, reset)
+	fmt.Printf("  2. Copy config: %scp .env.example .env%s\n", cyan, reset)
+	fmt.Printf("  3. Edit .env and set your provider and API key\n")
+	fmt.Printf("  4. Or use: %smako config set api_key YOUR_KEY%s\n\n", cyan, reset)
+	
+	fmt.Printf("%sSetup guide: %shttps://github.com/fabiobrug/mako/blob/main/docs/SETUP.md%s\n\n", dimBlue, cyan, reset)
 
 	// Step 2: Quick Tour
 	fmt.Printf("%s━━━━━━━━━━━━━━━━%s\n", dimBlue, reset)
@@ -68,7 +64,8 @@ func RunFirstTimeSetup() error {
 	fmt.Printf("%sTry these commands:%s\n", dimBlue, reset)
 	fmt.Printf("  %smako ask \"list files\"%s\n", cyan, reset)
 	fmt.Printf("  %smako ask \"find large files\"%s\n", cyan, reset)
-	fmt.Printf("  %smako history%s\n\n", cyan, reset)
+	fmt.Printf("  %smako history%s\n", cyan, reset)
+	fmt.Printf("  %smako health%s - Check configuration\n\n", cyan, reset)
 
 	// Step 3: Learn More
 	fmt.Printf("%s━━━━━━━━━━━━━━━━━%s\n", dimBlue, reset)
@@ -84,26 +81,6 @@ func RunFirstTimeSetup() error {
 	return nil
 }
 
-// promptForAPIKey prompts the user to enter their Gemini API key
-func promptForAPIKey() (string, error) {
-	cyan := "\033[38;2;0;209;255m"
-	reset := "\033[0m"
-
-	fmt.Printf("%sEnter API key (or press Enter to skip): %s", cyan, reset)
-
-	// Read password-style input (hidden)
-	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-	fmt.Println() // Add newline after password input
-	
-	if err != nil {
-		// Fallback to regular input if terminal doesn't support hidden input
-		var apiKey string
-		fmt.Scanln(&apiKey)
-		return strings.TrimSpace(apiKey), nil
-	}
-
-	return strings.TrimSpace(string(bytePassword)), nil
-}
 
 // ShowWelcomeMessage displays a welcome message on first run
 func ShowWelcomeMessage() {
@@ -112,6 +89,6 @@ func ShowWelcomeMessage() {
 	reset := "\033[0m"
 
 	fmt.Printf("\n%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", lightBlue, reset)
-	fmt.Printf("%s  Starting Mako v1.2.0%s\n", cyan, reset)
+	fmt.Printf("%s  Starting Mako v1.3.0%s\n", cyan, reset)
 	fmt.Printf("%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n\n", lightBlue, reset)
 }

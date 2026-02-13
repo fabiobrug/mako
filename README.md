@@ -33,27 +33,100 @@ Unlike traditional command-line tools, Mako intercepts terminal I/O through a PT
 
 ### Installation
 
-Mako works on **Linux** and **macOS**. You'll need a Gemini API key from [Google AI Studio](https://ai.google.dev/).
+Mako works on **Linux** and **macOS**. Choose from multiple AI providers including local models (Ollama) or cloud services (OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter).
 
-#### One-Line Install (Recommended)
+---
+
+## Choose Your Installation Method
+
+### Option 1: One-Line Install (Recommended)
+
+Fast installation with optional environment variable configuration:
 
 ```bash
+# Basic installation
+curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
+
+# Or install with provider configuration
+LLM_PROVIDER=openai LLM_MODEL=gpt-4o-mini LLM_API_KEY=sk-your-key \
 curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
 ```
 
-#### From Source
+**After installation, configure your AI provider:**
+
+```bash
+# Start Mako
+mako
+
+# Inside Mako shell, configure your provider:
+mako config set llm_provider openai
+mako config set llm_model gpt-4o-mini
+mako config set api_key sk-your-api-key
+
+# Or for Ollama (local):
+mako config set llm_provider ollama
+mako config set llm_model llama3.2
+mako config set llm_base_url http://localhost:11434
+
+# View all settings:
+mako config list
+```
+
+**Supported configuration keys:**
+- `llm_provider` - AI provider (openai, anthropic, gemini, deepseek, openrouter, ollama)
+- `llm_model` - Model name (provider-specific)
+- `llm_base_url` - Base URL (optional, for custom endpoints)
+- `api_key` - Your API key (not required for Ollama)
+
+**Check your configuration:**
+```bash
+# View current settings
+mako config list
+
+# Check provider and API status
+mako health
+```
+
+---
+
+### Option 2: From Source with .env File
+
+Clone the repository and configure via `.env` file:
 
 ```bash
 # Clone the repository
 git clone https://github.com/fabiobrug/mako.git
 cd mako/apps/cli
 
+# Copy and edit configuration
+cp .env.example .env
+nano .env  # Edit with your provider settings
+
 # Build
 make build
 
-# Install (requires sudo)
+# Install (optional, requires sudo)
 make install
+
+# Or run directly
+./mako
 ```
+
+**Example `.env` configuration:**
+
+```bash
+# OpenAI
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o-mini
+LLM_API_KEY=sk-your-key
+
+# Or Ollama (local, free)
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.2
+LLM_API_BASE=http://localhost:11434
+```
+
+---
 
 #### Verify Installation
 
@@ -64,14 +137,112 @@ mako
 # Inside Mako shell, try:
 mako ask "find files larger than 100MB"
 mako history
+mako health    # Check configuration status
 mako help
 ```
+
+### Configuration Priority
+
+Mako checks for configuration in this order:
+
+1. **Environment variables** (`.env` file in `apps/cli/`)
+2. **Config file** (`~/.mako/config.json`) - set via `mako config set`
+3. **Default values** (Gemini provider)
+
+You can use either method, or combine them. Environment variables take precedence.
+
+---
+
+### AI Provider Configuration
+
+Mako supports multiple AI providers. Configure your preferred provider using environment variables or CLI commands:
+
+#### Quick Setup
+
+```bash
+# Navigate to CLI directory
+cd apps/cli
+
+# Copy the example configuration
+cp .env.example .env
+
+# Edit the file and set your preferred provider
+nano .env
+```
+
+#### Supported Providers
+
+| Provider | Type | Cost | Best For |
+|----------|------|------|----------|
+| **Ollama** | Local | Free | Privacy, offline use, no API costs |
+| **OpenAI** | Cloud | Paid | Best quality, GPT-4o models |
+| **Anthropic** | Cloud | Paid | Claude models, great reasoning |
+| **Google Gemini** | Cloud | Free tier available | Default option, good balance |
+| **OpenRouter** | Cloud | Paid | Access to multiple models |
+| **DeepSeek** | Cloud | Paid | Cost-effective alternative |
+
+#### Example Configurations
+
+**Ollama (Local, Free)**
+```bash
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.2
+LLM_API_BASE=http://localhost:11434
+```
+
+**OpenAI**
+```bash
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o-mini
+LLM_API_KEY=sk-your-api-key-here
+```
+
+**Anthropic (Claude)**
+```bash
+LLM_PROVIDER=anthropic
+LLM_MODEL=claude-3-5-haiku-20241022
+LLM_API_KEY=sk-ant-your-key
+```
+
+**Google Gemini**
+```bash
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-2.5-flash
+LLM_API_KEY=your-gemini-key
+```
+
+#### Using Ollama (Local Models)
+
+Ollama allows you to run AI models locally on your machine:
+
+```bash
+# Install Ollama
+curl https://ollama.ai/install.sh | sh
+
+# Pull a model
+ollama pull llama3.2
+
+# Navigate to CLI directory and configure Mako
+cd apps/cli
+echo "LLM_PROVIDER=ollama" > .env
+echo "LLM_MODEL=llama3.2" >> .env
+echo "LLM_API_BASE=http://localhost:11434" >> .env
+
+# Start Mako
+./mako
+```
+
+Benefits of Ollama:
+- ✅ Completely free
+- ✅ Works offline
+- ✅ Privacy - data never leaves your machine
+- ✅ No API rate limits
 
 ### How It Works
 
 1. **Start Mako** - Wraps around your bash/zsh shell
 2. **Natural Language** - Type `mako ask "compress this video"` 
-3. **AI Generation** - Gemini generates the appropriate shell command
+3. **AI Generation** - Your configured AI provider generates the appropriate shell command
 4. **Review & Execute** - Review the command before running it
 5. **Learn & Improve** - Mako learns your preferences over time
 
@@ -148,8 +319,8 @@ mako/
 | Language | Go 1.24+ |
 | PTY Handling | creack/pty |
 | Database | SQLite with FTS5 (modernc.org/sqlite) |
-| AI Provider | Google Gemini API (gemini-2.0-flash-exp) |
-| Embeddings | text-embedding-004 |
+| AI Providers | OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Ollama |
+| Embeddings | Provider-specific (Gemini, OpenAI, Ollama) |
 | Build System | Make |
 
 ### Landing Page

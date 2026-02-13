@@ -55,7 +55,7 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.2.0
+## What's New in v1.3.0
 
 **🏗️ Monorepo Structure & Landing Page**
 
@@ -259,10 +259,11 @@ Runtime: **Go 1.24+**
 
 ```bash
 git clone https://github.com/fabiobrug/mako.git
-cd mako
+cd mako/apps/cli
 
-# Set up API key
-echo "GEMINI_API_KEY=your_api_key_here" > .env
+# Set up API key (copy from example)
+cp .env.example .env
+# Edit .env and set your provider and API key
 
 # Build binaries (using Makefile)
 make build
@@ -605,7 +606,7 @@ Mako automatically redacts:
 - For corrupted databases, backup and delete `~/.mako/mako.db` to start fresh
 
 ### API errors
-- Verify `GEMINI_API_KEY` is set in `.env` file
+- Verify `LLM_PROVIDER` and `LLM_API_KEY` are set in `.env` file (or legacy `GEMINI_API_KEY`)
 - Check API key is valid at [Google AI Studio](https://ai.google.dev/)
 - Rate limiting: Gemini API has rate limits - check `mako health` for status
 
