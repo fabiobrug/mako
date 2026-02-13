@@ -15,6 +15,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Mako - AI-native shell orchestrator",
   description: "An AI-native shell orchestrator that wraps around bash/zsh to provide intelligent command assistance",
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({

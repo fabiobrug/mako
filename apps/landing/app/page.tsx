@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { 
   Github, Search, ShieldCheck, Copy, Check, 
   Zap, Database, Brain,
