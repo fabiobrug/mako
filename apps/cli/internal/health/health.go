@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/fabiobrug/mako.git/internal/cache"
+	"github.com/fabiobrug/mako.git/internal/config"
 	"github.com/fabiobrug/mako.git/internal/database"
 )
 
@@ -136,20 +137,41 @@ func (c *Checker) checkAPIKey() ComponentHealth {
 		Details: make(map[string]interface{}),
 	}
 
-	// Get provider configuration
+	// Get provider configuration from environment variables first
 	provider := os.Getenv("LLM_PROVIDER")
-	if provider == "" {
-		provider = "gemini" // Default
+	model := os.Getenv("LLM_MODEL")
+	apiKey := os.Getenv("LLM_API_KEY")
+	baseURL := os.Getenv("LLM_API_BASE")
+	
+	// If not in env, try loading from config file
+	if provider == "" || apiKey == "" {
+		if cfg, err := config.LoadConfig(); err == nil {
+			if provider == "" && cfg.LLMProvider != "" {
+				provider = cfg.LLMProvider
+			}
+			if model == "" && cfg.LLMModel != "" {
+				model = cfg.LLMModel
+			}
+			if apiKey == "" && cfg.APIKey != "" {
+				apiKey = cfg.APIKey
+			}
+			if baseURL == "" && cfg.LLMBaseURL != "" {
+				baseURL = cfg.LLMBaseURL
+			}
+		}
 	}
 	
-	model := os.Getenv("LLM_MODEL")
+	// Legacy fallback
+	if apiKey == "" {
+		apiKey = os.Getenv("GEMINI_API_KEY")
+	}
+	
+	// Default values
+	if provider == "" {
+		provider = "gemini"
+	}
 	if model == "" {
 		model = "default"
-	}
-	
-	apiKey := os.Getenv("LLM_API_KEY")
-	if apiKey == "" {
-		apiKey = os.Getenv("GEMINI_API_KEY") // Legacy fallback
 	}
 	
 	health.Details["provider"] = provider
@@ -157,7 +179,6 @@ func (c *Checker) checkAPIKey() ComponentHealth {
 
 	// Ollama doesn't require API key
 	if provider == "ollama" {
-		baseURL := os.Getenv("LLM_API_BASE")
 		if baseURL == "" {
 			baseURL = "http://localhost:11434"
 		}
