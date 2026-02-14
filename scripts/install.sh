@@ -175,22 +175,20 @@ setup_mako_dir() {
 setup_api_key() {
     echo ""
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${LIGHT_BLUE}  Gemini API Key Setup${RESET}"
+    echo -e "${LIGHT_BLUE}  AI Provider Setup${RESET}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo ""
-    echo -e "${DIM_BLUE}Mako uses Google's Gemini API (free tier available)${RESET}"
-    echo -e "${DIM_BLUE}Get your key: ${CYAN}https://ai.google.dev/${RESET}"
+    echo -e "${DIM_BLUE}Mako supports multiple AI providers:${RESET}"
+    echo -e "  ${CYAN}OpenAI${RESET}     - https://platform.openai.com/api-keys"
+    echo -e "  ${CYAN}Gemini${RESET}     - https://ai.google.dev/ (free tier)"
+    echo -e "  ${CYAN}DeepSeek${RESET}   - https://platform.deepseek.com/ (free)"
+    echo -e "  ${CYAN}Ollama${RESET}     - https://ollama.ai/ (local, free)"
+    echo -e "  ${CYAN}Anthropic${RESET}  - https://console.anthropic.com/"
     echo ""
-    
-    read -p "$(echo -e ${CYAN}Enter API key \(or press Enter to skip\): ${RESET})" API_KEY
+    echo -e "${DIM_BLUE}Configure your provider after installation:${RESET}"
+    echo -e "  ${CYAN}mako config set llm_provider <openai|gemini|deepseek|ollama|anthropic>${RESET}"
+    echo -e "  ${CYAN}mako config set api_key YOUR_KEY${RESET}"
     echo ""
-    
-    if [ -n "$API_KEY" ]; then
-        echo "{\"api_key\":\"$API_KEY\"}" > "$MAKO_DIR/config.json"
-        print_success "API key saved!"
-    else
-        print_warning "You can set it later with: ${CYAN}mako config set api_key YOUR_KEY${RESET}"
-    fi
 }
 
 # Verify installation

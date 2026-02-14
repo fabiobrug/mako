@@ -147,7 +147,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "help":
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v1.3.0\n"), nil
+			return true, fmt.Sprintf("v1.3.1\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
 		case "clear":
@@ -186,7 +186,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 }
 
 func handleAsk(query string, db *database.DB) (string, error) {
-	client, err := ai.NewGeminiClient()
+	client, err := ai.NewAIProvider()
 	if err != nil {
 		return "", err
 	}
@@ -386,13 +386,10 @@ func handleAsk(query string, db *database.DB) (string, error) {
 
 			safeCommand := validator.RedactSecrets(command)
 
-			embedService, _ := ai.NewEmbeddingService()
+			embedService, _ := ai.NewEmbeddingProvider()
 			var embeddingBytes []byte
 			if embedService != nil {
-				vec, embedErr := embedService.Embed(safeCommand)
-				if embedErr == nil {
-					embeddingBytes = ai.VectorToBytes(vec)
-				}
+				embeddingBytes, _ = embedService.GenerateEmbedding(safeCommand)
 			}
 
 			db.SaveCommand(database.Command{
@@ -574,13 +571,10 @@ func handleAsk(query string, db *database.DB) (string, error) {
 
 			safeCommand := validator.RedactSecrets(command)
 
-			embedService, _ := ai.NewEmbeddingService()
+			embedService, _ := ai.NewEmbeddingProvider()
 			var embeddingBytes []byte
 			if embedService != nil {
-				vec, embedErr := embedService.Embed(safeCommand)
-				if embedErr == nil {
-					embeddingBytes = ai.VectorToBytes(vec)
-				}
+				embeddingBytes, _ = embedService.GenerateEmbedding(safeCommand)
 			}
 
 			db.SaveCommand(database.Command{
@@ -794,15 +788,14 @@ func handleSemanticHistory(query string, db *database.DB, filterFailed bool, fil
 	gray := "\033[38;2;150;150;150m"
 	reset := "\033[0m"
 	
-	embedService, err := ai.NewEmbeddingService()
+	embedService, err := ai.NewEmbeddingProvider()
 	if err != nil {
 		return "", err
 	}
-	queryVec, err := embedService.Embed(query)
+	queryBytes, err := embedService.GenerateEmbedding(query)
 	if err != nil {
 		return "", err
 	}
-	queryBytes := ai.VectorToBytes(queryVec)
 	commands, err := db.SearchCommandsSemantic(query, queryBytes, 10, 0.5)
 	if err != nil {
 		return "", err
@@ -1062,13 +1055,10 @@ func handleInteractiveHistory(db *database.DB, filterFailed bool, filterSuccess 
 
 			safeCommand := validator.RedactSecrets(selectedCmd.Command)
 
-			embedService, _ := ai.NewEmbeddingService()
+			embedService, _ := ai.NewEmbeddingProvider()
 			var embeddingBytes []byte
 			if embedService != nil {
-				vec, embedErr := embedService.Embed(safeCommand)
-				if embedErr == nil {
-					embeddingBytes = ai.VectorToBytes(vec)
-				}
+				embeddingBytes, _ = embedService.GenerateEmbedding(safeCommand)
 			}
 
 			db.SaveCommand(database.Command{
@@ -1356,13 +1346,10 @@ func handleAlias(args []string, db *database.DB) (string, error) {
 
 			safeCommand := validator.RedactSecrets(command)
 
-			embedService, _ := ai.NewEmbeddingService()
+			embedService, _ := ai.NewEmbeddingProvider()
 			var embeddingBytes []byte
 			if embedService != nil {
-				vec, embedErr := embedService.Embed(safeCommand)
-				if embedErr == nil {
-					embeddingBytes = ai.VectorToBytes(vec)
-				}
+				embeddingBytes, _ = embedService.GenerateEmbedding(safeCommand)
 			}
 
 			db.SaveCommand(database.Command{

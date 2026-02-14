@@ -55,7 +55,17 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.3.0
+## What's New in v1.3.1
+
+**🌐 Multi-Provider Support & Bug Fixes**
+
+- **Multi-provider architecture**: Full support for OpenAI, Gemini, DeepSeek, Anthropic, Ollama, and OpenRouter
+- **Fixed provider routing**: Corrected AI provider initialization to respect configuration settings
+- **Updated embedding system**: Migrated from deprecated functions to new provider interface
+- **Improved install script**: Provider-agnostic setup with instructions for all supported providers
+- **Better error handling**: Added logging for embedding provider initialization failures
+
+**Previous Release - v1.3.0**
 
 **🏗️ Monorepo Structure & Landing Page**
 
@@ -64,8 +74,6 @@ mako health
 - **Updated documentation**: Comprehensive README reorganization for better clarity
 - **Improved build system**: Enhanced build scripts for monorepo structure
 - **Better project organization**: Separated CLI application from marketing website
-
-**Previous Release - v1.1.7**
 
 **🔧 Bug Fixes & Improvements**
 

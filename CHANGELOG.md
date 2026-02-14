@@ -2,6 +2,25 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.3.1] - 2026-02-14
+
+### Fixed - Provider Routing Issues 🔧
+
+**Bug Fixes**
+- **Fixed hardcoded Gemini provider**: The `handleAsk` function was still using `NewGeminiClient()` instead of respecting the configured provider
+- **Fixed embedding provider initialization**: Replaced deprecated `NewEmbeddingService()` with `NewEmbeddingProvider()` throughout the codebase
+- **Updated 7 locations**: Fixed all instances where deprecated embedding functions were being called
+- **Added error logging**: Improved debugging by adding log output for embedding provider initialization failures
+
+**Improvements**
+- **Provider-agnostic install script**: Removed Gemini-specific references from `scripts/install.sh` and added documentation for all supported providers
+- **Better imports**: Added missing `log` import in main.go for error reporting
+
+**Impact**
+- Users can now successfully switch between providers without the system falling back to Gemini
+- Configuration settings (LLM_PROVIDER, API keys) are now properly respected
+- Embedding generation uses the configured provider instead of always using Gemini
+
 ## [1.3.0] - 2026-02-13
 
 ### Added - Multi-Provider Support 🎉

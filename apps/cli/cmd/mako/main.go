@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -33,7 +34,7 @@ func main() {
 		lightBlue := "\033[38;2;93;173;226m"
 		dimBlue := "\033[38;2;120;150;180m"
 		reset := "\033[0m"
-		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.3.0 %s%s\n", lightBlue, cyan, reset)
+		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.3.1 %s%s\n", lightBlue, cyan, reset)
 			fmt.Printf("%s", dimBlue)
 			return
 		case "ask", "history", "stats", "config", "update":
@@ -182,10 +183,12 @@ func runShellWrapper() {
 	// Initialize async embedding worker
 	var embeddingWorker *database.EmbeddingWorker
 	if db != nil {
-		embedService, err := ai.NewEmbeddingService()
+		embedService, err := ai.NewEmbeddingProvider()
 		if err == nil {
 			embeddingWorker = database.NewEmbeddingWorker(db, embedService, 2) // 2 workers
 			embeddingWorker.Start()
+		} else {
+			log.Printf("Warning: Failed to initialize embedding provider: %v", err)
 		}
 	}
 	
@@ -455,7 +458,7 @@ func syncBashHistory(db *database.DB) {
 
 	workingDir, _ := os.Getwd()
 
-	embedService, _ := ai.NewEmbeddingService()
+	embedService, _ := ai.NewEmbeddingProvider()
 
 	startIdx := len(lines) - 10
 	if startIdx < 0 {
@@ -478,10 +481,7 @@ func syncBashHistory(db *database.DB) {
 
 		var embeddingBytes []byte
 		if embedService != nil {
-			vec, err := embedService.Embed(line)
-			if err == nil {
-				embeddingBytes = ai.VectorToBytes(vec)
-			}
+			embeddingBytes, _ = embedService.GenerateEmbedding(line)
 		}
 
 		cmd := database.Command{
