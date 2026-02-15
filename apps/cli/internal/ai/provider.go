@@ -97,7 +97,19 @@ func LoadEmbeddingProviderConfig() (*ProviderConfig, error) {
 	
 	// If no embedding-specific config, fall back to main LLM config
 	if provider == "" {
-		return LoadProviderConfig()
+		llmCfg, err := LoadProviderConfig()
+		if err != nil {
+			return nil, err
+		}
+		
+		// Use the provider and API key from LLM config
+		// but NOT the model (embedding models are different from text generation models)
+		return &ProviderConfig{
+			Provider: llmCfg.Provider,
+			Model:    model, // Keep empty to use provider defaults
+			APIKey:   llmCfg.APIKey,
+			BaseURL:  baseURL,
+		}, nil
 	}
 	
 	provider = strings.ToLower(strings.TrimSpace(provider))

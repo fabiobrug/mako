@@ -13,7 +13,7 @@ import (
 
 const (
 	GitHubAPIURL   = "https://api.github.com/repos/fabiobrug/mako/releases/latest"
-	CurrentVersion = "1.3.1"
+	CurrentVersion = "1.3.2"
 )
 
 // UpdateInfo contains information about available updates

@@ -2,6 +2,20 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.3.2] - 2026-02-15
+
+### Fixed - Embedding Model Configuration 🐛
+
+**Bug Fix**
+- **Fixed semantic search with custom LLM models**: Resolved issue where `mako history semantic` would fail with a 404 error when using a custom `LLM_MODEL` setting
+- **Root cause**: The embedding provider was incorrectly inheriting the text generation model (e.g., `gemini-2.5-flash`) instead of using the proper embedding model (`text-embedding-004`)
+- **Solution**: Modified `LoadEmbeddingProviderConfig()` to use provider and API key from LLM config but NOT inherit the model, allowing each provider to use its correct default embedding model
+
+**Impact**
+- Semantic search (`mako history semantic`) now works correctly regardless of your `LLM_MODEL` configuration
+- Embedding models are now properly separated from text generation models
+- Users no longer encounter "model not found for embedContent" errors
+
 ## [1.3.1] - 2026-02-14
 
 ### Fixed - Provider Routing Issues 🔧

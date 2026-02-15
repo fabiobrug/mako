@@ -55,7 +55,15 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.3.1
+## What's New in v1.3.2
+
+**🐛 Embedding Model Configuration Fix**
+
+- **Fixed semantic search**: Corrected embedding provider to use proper model (text-embedding-004) instead of inheriting LLM model
+- **Bug fix**: Resolved 404 error when using `mako history semantic` with custom LLM_MODEL configuration
+- **Improved model separation**: Embedding and text generation models now properly independent
+
+**Previous Release - v1.3.1**
 
 **🌐 Multi-Provider Support & Bug Fixes**
 
