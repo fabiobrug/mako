@@ -75,22 +75,37 @@ func (e *Exporter) fetchCommands(opts ExportOptions) ([]database.Command, error)
 		return e.db.SearchCommands(opts.Semantic, 10000)
 	}
 
-	// Handle last N commands
+	// Determine the limit
+	limit := 10000
 	if opts.Last > 0 {
-		return e.db.GetRecentCommands(opts.Last)
-	}
-
-	// Handle directory filter
-	if opts.WorkingDir != "" {
-		return e.db.GetCommandsByDirectory(opts.WorkingDir, 10000)
+		limit = opts.Last
 	}
 
 	// Handle success/failed filter
 	if opts.SuccessOnly {
-		return e.db.GetCommandsByExitCode(true, 10000)
+		return e.db.GetCommandsByExitCode(true, limit)
 	}
 	if opts.FailedOnly {
-		return e.db.GetCommandsByExitCode(false, 10000)
+		return e.db.GetCommandsByExitCode(false, limit)
+	}
+
+	// Handle directory filter
+	if opts.WorkingDir != "" {
+		// Get recent commands and filter by directory
+		allCommands, err := e.db.GetRecentCommands(limit * 2) // Get more to ensure enough after filtering
+		if err != nil {
+			return nil, err
+		}
+		var filtered []database.Command
+		for _, cmd := range allCommands {
+			if cmd.WorkingDir == opts.WorkingDir {
+				filtered = append(filtered, cmd)
+				if len(filtered) >= limit {
+					break
+				}
+			}
+		}
+		return filtered, nil
 	}
 
 	// Handle date range
@@ -98,8 +113,8 @@ func (e *Exporter) fetchCommands(opts ExportOptions) ([]database.Command, error)
 		return e.fetchByDateRange(opts.DateFrom, opts.DateTo)
 	}
 
-	// Default: all commands (limited to 10k for safety)
-	return e.db.GetRecentCommands(10000)
+	// Default: recent commands
+	return e.db.GetRecentCommands(limit)
 }
 
 // fetchByDateRange retrieves commands within a date range

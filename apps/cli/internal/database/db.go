@@ -39,6 +39,13 @@ func NewDB(dbPath string) (*DB, error) {
 
 	db := &DB{conn: conn}
 
+	// Enable WAL mode for better concurrent access
+	_, err = conn.Exec("PRAGMA journal_mode=WAL")
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("failed to enable WAL mode: %w", err)
+	}
+
 	if err := db.initTables(); err != nil {
 		conn.Close()
 		return nil, err
@@ -166,10 +173,17 @@ func (db *DB) runMigrations() error {
 }
 
 func (db *DB) SaveCommand(cmd Command) error {
+	hash := hashCommand(cmd.Command)
+	
 	query := `
-		INSERT INTO commands (command, timestamp, exit_code, duration_ms, working_dir, output_preview, embedding)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO commands (command, timestamp, exit_code, duration_ms, working_dir, output_preview, embedding, command_hash, embedding_status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, 'pending'))
 	`
+
+	embeddingStatus := cmd.EmbeddingStatus
+	if embeddingStatus == "" {
+		embeddingStatus = "pending"
+	}
 
 	_, err := db.conn.Exec(
 		query,
@@ -180,6 +194,8 @@ func (db *DB) SaveCommand(cmd Command) error {
 		cmd.WorkingDir,
 		cmd.OutputPreview,
 		cmd.Embedding,
+		hash,
+		embeddingStatus,
 	)
 
 	return err
@@ -187,7 +203,8 @@ func (db *DB) SaveCommand(cmd Command) error {
 
 func (db *DB) SearchCommands(query string, limit int) ([]Command, error) {
 	sqlQuery := `
-		SELECT c.id, c.command, c.timestamp, c.exit_code, c.duration_ms, c.working_dir, c.output_preview
+		SELECT c.id, c.command, c.timestamp, c.exit_code, c.duration_ms, c.working_dir, c.output_preview,
+		       c.embedding, COALESCE(c.embedding_status, 'pending') as embedding_status
 		FROM commands c
 		JOIN commands_fts fts ON c.id = fts.rowid
 		WHERE commands_fts MATCH ?
@@ -212,6 +229,8 @@ func (db *DB) SearchCommands(query string, limit int) ([]Command, error) {
 			&cmd.Duration,
 			&cmd.WorkingDir,
 			&cmd.OutputPreview,
+			&cmd.Embedding,
+			&cmd.EmbeddingStatus,
 		)
 		if err != nil {
 			return nil, err
@@ -224,7 +243,8 @@ func (db *DB) SearchCommands(query string, limit int) ([]Command, error) {
 
 func (db *DB) GetRecentCommands(limit int) ([]Command, error) {
 	query := `
-		SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview
+		SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview, 
+		       embedding, COALESCE(embedding_status, 'pending') as embedding_status
 		FROM commands
 		ORDER BY timestamp DESC
 		LIMIT ?
@@ -247,6 +267,8 @@ func (db *DB) GetRecentCommands(limit int) ([]Command, error) {
 			&cmd.Duration,
 			&cmd.WorkingDir,
 			&cmd.OutputPreview,
+			&cmd.Embedding,
+			&cmd.EmbeddingStatus,
 		)
 		if err != nil {
 			return nil, err
@@ -262,7 +284,8 @@ func (db *DB) GetCommandsByExitCode(successful bool, limit int) ([]Command, erro
 	var query string
 	if successful {
 		query = `
-			SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview
+			SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview,
+			       embedding, COALESCE(embedding_status, 'pending') as embedding_status
 			FROM commands
 			WHERE exit_code = 0
 			ORDER BY timestamp DESC
@@ -270,7 +293,8 @@ func (db *DB) GetCommandsByExitCode(successful bool, limit int) ([]Command, erro
 		`
 	} else {
 		query = `
-			SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview
+			SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview,
+			       embedding, COALESCE(embedding_status, 'pending') as embedding_status
 			FROM commands
 			WHERE exit_code != 0
 			ORDER BY timestamp DESC
@@ -295,6 +319,8 @@ func (db *DB) GetCommandsByExitCode(successful bool, limit int) ([]Command, erro
 			&cmd.Duration,
 			&cmd.WorkingDir,
 			&cmd.OutputPreview,
+			&cmd.Embedding,
+			&cmd.EmbeddingStatus,
 		)
 		if err != nil {
 			return nil, err
@@ -656,9 +682,10 @@ func (db *DB) UpdateEmbeddingStatus(cmdID int64, status string, embedding []byte
 // GetPendingEmbeddings returns commands that need embeddings generated
 func (db *DB) GetPendingEmbeddings(limit int) ([]Command, error) {
 	query := `
-		SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview
+		SELECT id, command, timestamp, exit_code, duration_ms, working_dir, output_preview,
+		       embedding, COALESCE(embedding_status, 'pending') as embedding_status
 		FROM commands
-		WHERE embedding_status = 'pending'
+		WHERE COALESCE(embedding_status, 'pending') = 'pending'
 		ORDER BY timestamp DESC
 		LIMIT ?
 	`
@@ -680,6 +707,8 @@ func (db *DB) GetPendingEmbeddings(limit int) ([]Command, error) {
 			&cmd.Duration,
 			&cmd.WorkingDir,
 			&cmd.OutputPreview,
+			&cmd.Embedding,
+			&cmd.EmbeddingStatus,
 		)
 		if err != nil {
 			return nil, err
