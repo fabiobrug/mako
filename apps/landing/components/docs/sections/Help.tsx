@@ -22,6 +22,81 @@ export const HelpSection = () => (
     
     <div className="space-y-6">
       <div className="bg-code border border-border rounded-lg p-6">
+        <h3 className="font-mono text-base font-semibold text-foreground mb-3">🔧 Mako changes directory instead of starting (Zsh)</h3>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+          <strong className="text-foreground">Problem:</strong> Running <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">mako</code> from home directory changes to <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">~/mako</code> directory instead of starting the shell.
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+          <strong className="text-foreground">Cause:</strong> Zsh's <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">AUTO_CD</code> feature. When enabled, typing a command that matches a directory name will <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">cd</code> into that directory instead of running the command.
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+          <strong className="text-foreground">Solution (Recommended):</strong> Add an alias to your <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">~/.zshrc</code>:
+        </p>
+        <CodeBlock>{`# Prevent zsh from auto-cd into ~/mako directory
+alias mako='/usr/local/bin/mako'`}</CodeBlock>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-3 mb-2">
+          Then reload your shell:
+        </p>
+        <CodeBlock>{`source ~/.zshrc`}</CodeBlock>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-3">
+          <strong className="text-foreground">Alternative solutions:</strong>
+        </p>
+        <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1 mt-2">
+          <li>Rename the repository: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">mv ~/mako ~/mako-repo</code></li>
+          <li>Disable AUTO_CD globally: Add <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">unsetopt AUTO_CD</code> to <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">~/.zshrc</code></li>
+          <li>Always use full path: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">/usr/local/bin/mako</code></li>
+        </ul>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-3">
+          Check if AUTO_CD is enabled: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">setopt | grep autocd</code>
+        </p>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-6">
+        <h3 className="font-mono text-base font-semibold text-foreground mb-3">Contextual help not working</h3>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+          <strong className="text-foreground">Problem:</strong> Commands like <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">mako help quickstart</code> or <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">mako help --alias</code> show full help instead of specific topics.
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+          <strong className="text-foreground">Solution:</strong> Update to v1.3.3+ which includes contextual help support. Available help topics:
+        </p>
+        <CodeBlock>{`mako help quickstart   # Quick start guide
+mako help alias        # Alias commands (or --alias)
+mako help history      # History search
+mako help config       # Configuration
+mako help embedding    # Embeddings explained`}</CodeBlock>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-6">
+        <h3 className="font-mono text-base font-semibold text-foreground mb-3">Semantic search not working (API 404)</h3>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+          <strong className="text-foreground">Problem:</strong> <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">mako history semantic</code> returns API error 404.
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+          <strong className="text-foreground">Cause:</strong> Embedding model configuration issue or using deprecated embedding model.
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+          <strong className="text-foreground">Solution:</strong> Check your embedding configuration:
+        </p>
+        <CodeBlock>{`# Check configuration and health
+mako health          # Shows embedding provider status
+mako config list     # Shows current configuration`}</CodeBlock>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-3 mb-2">
+          Ensure you're using current embedding models:
+        </p>
+        <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1">
+          <li>Gemini: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">text-embedding-005</code> (not deprecated text-embedding-004)</li>
+          <li>OpenAI: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">text-embedding-3-small</code></li>
+          <li>Ollama: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">nomic-embed-text</code></li>
+        </ul>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-3 mb-2">
+          If using custom LLM_MODEL, ensure EMBEDDING_MODEL doesn't inherit it:
+        </p>
+        <CodeBlock>{`# In your .env file
+LLM_MODEL=gemini-2.5-flash           # For command generation
+EMBEDDING_MODEL=text-embedding-005   # For semantic search (optional)`}</CodeBlock>
+      </div>
+
+      <div className="bg-code border border-border rounded-lg p-6">
         <h3 className="font-mono text-base font-semibold text-foreground mb-3">Mako won't start</h3>
         <p className="text-muted-foreground text-sm leading-relaxed mb-3">
           Check that:

@@ -57,6 +57,15 @@ mako health
 
 ## What's New in v1.3.4
 
+**🔧 Contextual Help & Troubleshooting Improvements**
+
+- **Contextual help system**: `mako help quickstart`, `mako help --alias`, `mako help embedding` now show topic-specific guides
+- **Zsh AUTO_CD fix documented**: Comprehensive troubleshooting guide for directory-change issue
+- **Enhanced troubleshooting**: Added semantic search fixes, API error solutions, and configuration guides
+- **Better documentation**: Landing page and CLI README include common issue resolutions
+
+**Previous Release - v1.3.3**
+
 **📚 Enhanced Embedding Configuration & Documentation**
 
 - **Comprehensive embedding guides**: Added detailed documentation on what embeddings are and why they're needed
@@ -716,6 +725,71 @@ Mako automatically redacts:
 
 ## Troubleshooting
 
+### `mako` command changes directory instead of starting shell
+
+**Problem**: Running `mako` from home directory (`~`) changes to `~/mako` directory instead of starting Mako.
+
+**Cause**: Zsh's `AUTO_CD` feature. When enabled, typing a command that matches a directory name will `cd` into that directory instead of running the command.
+
+**Solution (Recommended)**: Add an alias to your `~/.zshrc`:
+
+```bash
+# Prevent zsh from auto-cd into ~/mako directory
+alias mako='/usr/local/bin/mako'
+```
+
+Then reload your shell:
+```bash
+source ~/.zshrc
+```
+
+**Alternative Solutions**:
+- Rename the repository directory: `mv ~/mako ~/mako-repo`
+- Disable AUTO_CD globally: Add `unsetopt AUTO_CD` to `~/.zshrc`
+- Always use full path: `/usr/local/bin/mako`
+
+**Check if AUTO_CD is enabled**:
+```bash
+setopt | grep autocd
+# If you see AUTO_CD, it's enabled
+```
+
+### Contextual help not working
+
+**Problem**: Commands like `mako help quickstart` or `mako help --alias` show full help instead of specific topics.
+
+**Solution**: Update to v1.3.3+ which includes contextual help support:
+- `mako help quickstart` - Quick start guide
+- `mako help alias` or `mako help --alias` - Alias commands
+- `mako help history` - History search
+- `mako help config` - Configuration
+- `mako help embedding` - Embeddings explained
+
+### Semantic search not working
+
+**Problem**: `mako history semantic` returns API error 404.
+
+**Cause**: Embedding model configuration issue or using deprecated embedding model.
+
+**Solution**: 
+1. Check your embedding configuration:
+```bash
+mako health          # Shows embedding provider status
+mako config list     # Shows current configuration
+```
+
+2. Ensure you're using current embedding models:
+   - Gemini: `text-embedding-005` (not the deprecated `text-embedding-004`)
+   - OpenAI: `text-embedding-3-small`
+   - Ollama: `nomic-embed-text`
+
+3. If using custom `LLM_MODEL`, ensure `EMBEDDING_MODEL` is not inheriting it:
+```bash
+# In your .env file
+LLM_MODEL=gemini-2.5-flash           # For command generation
+EMBEDDING_MODEL=text-embedding-005   # For semantic search (optional)
+```
+
 ### Menu not appearing
 - Ensure `mako-menu` binary is in the same directory as `mako`
 - Check file permissions: both binaries must be executable (`chmod +x mako mako-menu`)
@@ -735,6 +809,7 @@ Mako automatically redacts:
 - Verify `LLM_PROVIDER` and `LLM_API_KEY` are set in `.env` file (or legacy `GEMINI_API_KEY`)
 - Check API key is valid at [Google AI Studio](https://ai.google.dev/)
 - Rate limiting: Gemini API has rate limits - check `mako health` for status
+- Model not found errors: Ensure you're using valid model names for your provider
 
 ### Performance issues
 - Run `mako health` to check system status
@@ -752,6 +827,8 @@ Mako automatically redacts:
 - Default path: `~/.bash_history`
 - Check sync metadata: SQLite table `sync_metadata`
 - Manual sync: `mako sync`
+
+**For more detailed troubleshooting, see [docs/TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md)**
 
 ## License
 

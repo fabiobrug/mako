@@ -2,6 +2,30 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.3.4] - 2026-02-15
+
+### Fixed - Contextual Help & Documentation 🔧
+
+**Bug Fixes**
+- **Fixed contextual help**: Commands like `mako help quickstart` and `mako help --alias` now show topic-specific help instead of full help text
+- **Added contextual help topics**: quickstart, alias, history, config, embedding - each provides focused guidance
+- **Improved help system**: Support for both `--flag` style and plain word topics
+
+**Documentation Enhancements**
+- **Added Zsh AUTO_CD troubleshooting**: Comprehensive guide for the common issue where `mako` command changes directory instead of starting
+  - Explains root cause (AUTO_CD feature)
+  - Provides recommended solution (alias)
+  - Lists alternative solutions
+  - Includes detection command
+- **Added semantic search troubleshooting**: Guide for fixing API 404 errors with embedding models
+- **Updated landing page docs**: Help section now includes all common troubleshooting scenarios
+- **Enhanced CLI README**: Expanded troubleshooting section with new issues and solutions
+
+**Impact**
+- Users can now get focused help for specific topics without seeing the full command list
+- Common directory-change issue (Zsh AUTO_CD) is now documented with clear solutions
+- Better user experience for getting help and troubleshooting
+
 ## [1.3.3] - 2026-02-15
 
 ### Added - Enhanced Embedding Configuration & Documentation 📚

@@ -52,6 +52,14 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 			output, err := handleAlias(parts[2:], db)
 			return true, output, err
 		case "help":
+			// Support contextual help like "mako help quickstart" or "mako help --alias"
+			if len(parts) > 2 {
+				topic := strings.ToLower(parts[2])
+				helpText := getContextualHelp(topic)
+				if helpText != "" {
+					return true, helpText, nil
+				}
+			}
 			return true, getHelpText(), nil
 		case "v", "version":
 			return true, fmt.Sprintf("v1.3.4\n"), nil
