@@ -377,7 +377,7 @@ func saveAPIKeys(apiKeys map[string]string) error {
 		"anthropic":  "ANTHROPIC_API_KEY",
 		"openai":     "OPENAI_API_KEY",
 		"deepseek":   "DEEPSEEK_API_KEY",
-		"openrouter": "OPENROUTER_API_KEY",
+		"openrouter": "OPENROUTER_API_KEY",curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
 	}
 	
 	for provider, key := range apiKeys {
@@ -420,7 +420,7 @@ func showCompletionMessage(defaultProvider string) {
 	fmt.Printf("\n\n")
 	fmt.Printf("  %s╔═══════════════════════════════════════════════════════╗%s\n", ColorGreen, ColorReset)
 	fmt.Printf("  %s║                                                       ║%s\n", ColorGreen, ColorReset)
-	fmt.Printf("  %s║              %s✨ Setup Complete! ✨%s                  ║%s\n", ColorGreen, ColorBold, ColorGreen, ColorReset)
+	fmt.Printf("  %s║              %s✨ Setup Complete! ✨%s                ║%s\n", ColorGreen, ColorBold, ColorGreen, ColorReset)
 	fmt.Printf("  %s║                                                       ║%s\n", ColorGreen, ColorReset)
 	fmt.Printf("  %s╚═══════════════════════════════════════════════════════╝%s\n", ColorGreen, ColorReset)
 	fmt.Printf("\n")
@@ -458,15 +458,15 @@ func showWelcomeBanner() {
 	fmt.Printf("\n\n")
 	fmt.Printf("  %s╔═══════════════════════════════════════════════════════╗%s\n", ColorCyan, ColorReset)
 	fmt.Printf("  %s║                                                       ║%s\n", ColorCyan, ColorReset)
-	fmt.Printf("  %s║          ███╗   ███╗ █████╗ ██╗  ██╗ ██████╗        ║%s\n", ColorCyan, ColorReset)
-	fmt.Printf("  %s║          ████╗ ████║██╔══██╗██║ ██╔╝██╔═══██╗       ║%s\n", ColorCyan, ColorReset)
-	fmt.Printf("  %s║          ██╔████╔██║███████║█████╔╝ ██║   ██║       ║%s\n", ColorCyan, ColorReset)
-	fmt.Printf("  %s║          ██║╚██╔╝██║██╔══██║██╔═██╗ ██║   ██║       ║%s\n", ColorCyan, ColorReset)
-	fmt.Printf("  %s║          ██║ ╚═╝ ██║██║  ██║██║  ██╗╚██████╔╝       ║%s\n", ColorCyan, ColorReset)
-	fmt.Printf("  %s║          ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝        ║%s\n", ColorCyan, ColorReset)
+	fmt.Printf("  %s║          ███╗   ███╗ █████╗ ██╗  ██╗ ██████╗          ║%s\n", ColorCyan, ColorReset)
+	fmt.Printf("  %s║          ████╗ ████║██╔══██╗██║ ██╔╝██╔═══██╗         ║%s\n", ColorCyan, ColorReset)
+	fmt.Printf("  %s║          ██╔████╔██║███████║█████╔╝ ██║   ██║         ║%s\n", ColorCyan, ColorReset)
+	fmt.Printf("  %s║          ██║╚██╔╝██║██╔══██║██╔═██╗ ██║   ██║         ║%s\n", ColorCyan, ColorReset)
+	fmt.Printf("  %s║          ██║ ╚═╝ ██║██║  ██║██║  ██╗╚██████╔╝         ║%s\n", ColorCyan, ColorReset)
+	fmt.Printf("  %s║          ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝          ║%s\n", ColorCyan, ColorReset)
 	fmt.Printf("  %s║                                                       ║%s\n", ColorCyan, ColorReset)
-	fmt.Printf("  %s║           %sAI-Native Shell Orchestrator%s                ║%s\n", ColorCyan, ColorBold, ColorCyan, ColorReset)
-	fmt.Printf("  %s║              %sWelcome! Let's get started.%s              ║%s\n", ColorCyan, ColorDimBlue, ColorCyan, ColorReset)
+	fmt.Printf("  %s║           %sAI-Native Shell Orchestrator%s            ║%s\n", ColorCyan, ColorBold, ColorCyan, ColorReset)
+	fmt.Printf("  %s║              %sWelcome! Let's get started.%s          ║%s\n", ColorCyan, ColorDimBlue, ColorCyan, ColorReset)
 	fmt.Printf("  %s║                                                       ║%s\n", ColorCyan, ColorReset)
 	fmt.Printf("  %s╚═══════════════════════════════════════════════════════╝%s\n", ColorCyan, ColorReset)
 	fmt.Printf("\n")
