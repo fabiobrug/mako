@@ -159,9 +159,9 @@ func getContextualHelp(topic string) string {
 			lightBlue, reset, cyan, reset,
 			lightBlue, reset,
 			lightBlue, reset, cyan, reset,
-			lightBlue, reset, cyan, dimBlue, reset,
-			lightBlue, reset, cyan, dimBlue, reset,
-			lightBlue, reset, cyan, dimBlue, reset,
+			lightBlue, reset, cyan, reset,
+			lightBlue, reset, cyan, reset,
+			lightBlue, reset, cyan, reset,
 			lightBlue, reset,
 			lightBlue, reset, dimBlue, reset)
 
