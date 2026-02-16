@@ -176,8 +176,11 @@ func runShellWrapper() {
 	// Initialize embedding cache
 	embeddingCache := cache.NewEmbeddingCache(10000) // Max 10k entries
 	if db != nil && embeddingCache != nil {
-		// Load cache from database (ignore errors - cache might not exist yet)
-		_ = embeddingCache.Load(db.GetConn())
+		// Load cache from database
+		if err := embeddingCache.Load(db.GetConn()); err != nil {
+			// Log error but don't fail - cache table might not exist yet on first run
+			log.Printf("Warning: Failed to load embedding cache: %v", err)
+		}
 	}
 	
 	// Initialize async embedding worker
@@ -194,9 +197,12 @@ func runShellWrapper() {
 	
 	defer func() {
 		if db != nil {
-			// Save cache to database (ignore errors)
+			// Save cache to database
 			if embeddingCache != nil {
-				_ = embeddingCache.Save(db.GetConn())
+				if err := embeddingCache.Save(db.GetConn()); err != nil {
+					// Log error but don't fail the shutdown process
+					log.Printf("Warning: Failed to save embedding cache: %v", err)
+				}
 			}
 			
 			// Stop async worker
