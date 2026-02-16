@@ -317,7 +317,7 @@ func getContextualHelp(topic string) string {
 %s│%s  By default, uses the same provider as your LLM.
 %s│%s
 %s│%s  Default embedding models:
-%s│%s  • Gemini: text-embedding-005
+%s│%s  • Gemini: gemini-embedding-001
 %s│%s  • OpenAI: text-embedding-3-small
 %s│%s  • Ollama: nomic-embed-text (local, free)
 %s│%s

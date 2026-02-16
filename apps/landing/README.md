@@ -69,7 +69,7 @@ When documenting embedding setup for users:
 
 1. **Default Behavior**: Embeddings use the same provider as the LLM (no extra config needed)
 2. **Supported Providers**:
-   - Gemini: `text-embedding-005` (768-dimensional)
+   - Gemini: `gemini-embedding-001` (768-dimensional, state-of-the-art)
    - OpenAI: `text-embedding-3-small` (1536-dimensional)
    - Ollama: `nomic-embed-text` (local, free, private)
 

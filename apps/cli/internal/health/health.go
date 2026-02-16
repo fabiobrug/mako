@@ -352,7 +352,7 @@ func (c *Checker) checkEmbeddingProvider() ComponentHealth {
 	if defaultModel == "" {
 		switch embeddingProvider {
 		case "gemini":
-			defaultModel = "text-embedding-005"
+			defaultModel = "gemini-embedding-001"
 		case "openai":
 			defaultModel = "text-embedding-3-small"
 		case "ollama":

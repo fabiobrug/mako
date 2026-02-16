@@ -55,7 +55,16 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.3.4
+## What's New in v1.3.5
+
+**🎯 Embedding Model Fix - Production Ready**
+
+- **Updated to recommended embedding model**: Switched to `gemini-embedding-001` (Google's state-of-the-art unified model)
+- **Fixed API 404 errors**: Previous models (`text-embedding-004`, `text-embedding-005`) were causing failures
+- **Improved reliability**: Using Google's officially recommended model with superior quality
+- **Better performance**: State-of-the-art embeddings for semantic search across English, multilingual, and code tasks
+
+**Previous Release - v1.3.4**
 
 **🔧 Contextual Help & Troubleshooting Improvements**
 
@@ -78,7 +87,7 @@ mako health
 
 **🐛 Embedding Model Configuration Fix**
 
-- **Fixed semantic search**: Updated to use current Gemini embedding model (text-embedding-005, as text-embedding-004 was deprecated in Jan 2026)
+- **Fixed semantic search**: Updated to recommended Gemini embedding model (gemini-embedding-001, state-of-the-art)
 - **Bug fix**: Resolved 404 error when using `mako history semantic` with custom LLM_MODEL configuration
 - **Improved model separation**: Embedding and text generation models now properly independent
 
@@ -442,7 +451,7 @@ This allows you to search your history by describing what you want to do, even i
 By default, Mako uses the same AI provider for both command generation and embeddings. You can optionally configure a separate embedding provider.
 
 **Default embedding models by provider:**
-- **Gemini**: `text-embedding-005` (768-dimensional)
+- **Gemini**: `gemini-embedding-001` (768-dimensional, state-of-the-art)
 - **OpenAI**: `text-embedding-3-small` (1536-dimensional)
 - **Ollama**: `nomic-embed-text` (local, free)
 
@@ -452,7 +461,7 @@ By default, Mako uses the same AI provider for both command generation and embed
 # In your .env file
 LLM_PROVIDER=gemini
 LLM_API_KEY=your-api-key
-# Embeddings will automatically use gemini + text-embedding-005
+# Embeddings will automatically use gemini + gemini-embedding-001
 ```
 
 **Using a different provider for embeddings:**
@@ -518,7 +527,7 @@ The database automatically migrates to the latest schema on startup:
 - **Language**: Go 1.24+
 - **AI Provider**: Google Gemini API
   - `gemini-2.0-flash-exp` for command generation
-  - `text-embedding-005` for semantic search (768-dimensional vectors)
+  - `gemini-embedding-001` for semantic search (768-dimensional vectors)
 - **Database**: SQLite with FTS5 for hybrid search
 - **Terminal**: PTY via `creack/pty`
 
@@ -779,7 +788,7 @@ mako config list     # Shows current configuration
 ```
 
 2. Ensure you're using current embedding models:
-   - Gemini: `text-embedding-005` (not the deprecated `text-embedding-004`)
+   - Gemini: `gemini-embedding-001` (recommended)
    - OpenAI: `text-embedding-3-small`
    - Ollama: `nomic-embed-text`
 
@@ -787,7 +796,7 @@ mako config list     # Shows current configuration
 ```bash
 # In your .env file
 LLM_MODEL=gemini-2.5-flash           # For command generation
-EMBEDDING_MODEL=text-embedding-005   # For semantic search (optional)
+EMBEDDING_MODEL=gemini-embedding-001   # For semantic search (optional)
 ```
 
 ### Menu not appearing

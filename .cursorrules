@@ -20,7 +20,7 @@ Mako is an AI-native shell orchestrator that wraps around bash/zsh to provide in
  - `atotto/clipboard` - Clipboard operations
 - **AI Provider**: Google Gemini API
  - `gemini-2.0-flash-exp` for command generation
- - `text-embedding-004` for semantic search
+ - `gemini-embedding-001` for semantic search
 - **Build Command**: `cd apps/cli && make build`
 - **Manual Build**: `cd apps/cli && go build -o mako ./cmd/mako && go build -o mako-menu ./cmd/mako-menu`
 

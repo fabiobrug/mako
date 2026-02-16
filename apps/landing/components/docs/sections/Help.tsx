@@ -84,7 +84,7 @@ mako config list     # Shows current configuration`}</CodeBlock>
           Ensure you're using current embedding models:
         </p>
         <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1">
-          <li>Gemini: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">text-embedding-005</code> (not deprecated text-embedding-004)</li>
+          <li>Gemini: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">gemini-embedding-001</code> (recommended)</li>
           <li>OpenAI: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">text-embedding-3-small</code></li>
           <li>Ollama: <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">nomic-embed-text</code></li>
         </ul>
@@ -93,7 +93,7 @@ mako config list     # Shows current configuration`}</CodeBlock>
         </p>
         <CodeBlock>{`# In your .env file
 LLM_MODEL=gemini-2.5-flash           # For command generation
-EMBEDDING_MODEL=text-embedding-005   # For semantic search (optional)`}</CodeBlock>
+EMBEDDING_MODEL=gemini-embedding-001   # For semantic search (optional)`}</CodeBlock>
       </div>
 
       <div className="bg-code border border-border rounded-lg p-6">

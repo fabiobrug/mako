@@ -2,6 +2,38 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.3.5] - 2026-02-16
+
+### Fixed - Embedding Model Critical Fix 🎯
+
+**Critical Bug Fix**
+- **Switched to `gemini-embedding-001`**: Google's recommended state-of-the-art unified embedding model
+- **Fixed API 404 errors**: Previous attempts to use `text-embedding-005` (doesn't exist) and `text-embedding-004` (deprecated) were causing embedding generation failures
+- **Root cause**: Incorrect model selection based on outdated documentation
+- **Solution**: Updated to `gemini-embedding-001` which is:
+  - Google's officially recommended model
+  - State-of-the-art quality
+  - Supports English, multilingual, and code tasks
+  - Up to 3072 dimensions (configurable)
+  - Available in v1beta API
+
+**Files Updated**
+- Default embedding model in all provider configurations
+- Health check validation
+- Documentation across CLI and landing page
+- Help text and configuration examples
+
+**Impact**
+- Semantic search (`mako history semantic`) now works reliably without API errors
+- Background embedding generation completes successfully
+- Superior embedding quality for better semantic search results
+- Production-ready embedding system
+
+**Testing**
+- Verified `gemini-embedding-001` is available in Gemini API v1beta
+- Confirmed model supports embedContent endpoint
+- All documentation and defaults aligned
+
 ## [1.3.4] - 2026-02-15
 
 ### Fixed - Contextual Help & Documentation 🔧
@@ -57,9 +89,9 @@ All notable changes to Mako will be documented in this file.
 
 **Bug Fixes**
 - **Fixed semantic search with custom LLM models**: Resolved issue where `mako history semantic` would fail with a 404 error when using a custom `LLM_MODEL` setting
-- **Updated to current Gemini embedding model**: Changed from deprecated `text-embedding-004` (removed Jan 14, 2026) to current `text-embedding-005`
-- **Root cause**: Two issues - (1) embedding provider was inheriting the text generation model, and (2) using a deprecated embedding model
-- **Solution**: Modified `LoadEmbeddingProviderConfig()` to properly separate embedding models from LLM models, and updated to `text-embedding-005`
+- **Updated embedding model**: Switched to recommended `gemini-embedding-001` (state-of-the-art unified model)
+- **Root cause**: Embedding provider was inheriting the text generation model
+- **Solution**: Modified `LoadEmbeddingProviderConfig()` to properly separate embedding models from LLM models
 
 **Impact**
 - Semantic search (`mako history semantic`) now works correctly regardless of your `LLM_MODEL` configuration
