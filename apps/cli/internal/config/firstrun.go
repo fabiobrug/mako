@@ -89,6 +89,6 @@ func ShowWelcomeMessage() {
 	reset := "\033[0m"
 
 	fmt.Printf("\n%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n", lightBlue, reset)
-	fmt.Printf("%s  Starting Mako v1.3.3%s\n", cyan, reset)
+	fmt.Printf("%s  Starting Mako v1.3.4%s\n", cyan, reset)
 	fmt.Printf("%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n\n", lightBlue, reset)
 }

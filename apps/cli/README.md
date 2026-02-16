@@ -55,7 +55,7 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.3.3
+## What's New in v1.3.4
 
 **📚 Enhanced Embedding Configuration & Documentation**
 
