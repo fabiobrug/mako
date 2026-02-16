@@ -3,6 +3,7 @@ package shell
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/fabiobrug/mako.git/internal/config"
@@ -21,10 +22,19 @@ func handleConfig(args []string) (string, error) {
 	}
 
 	if len(args) == 0 {
-		return fmt.Sprintf("Usage: mako config <list|get|set|reset>\r\n"), nil
+		return fmt.Sprintf("Usage: mako config <list|get|set|reset|providers|switch>\r\n"), nil
 	}
 
 	switch args[0] {
+	case "providers":
+		return handleProvidersList(), nil
+	
+	case "switch":
+		if len(args) < 2 {
+			return "Usage: mako config switch <provider>\r\n", nil
+		}
+		return handleProviderSwitch(args[1], cfg)
+	
 	case "list":
 		output := fmt.Sprintf("\r\n%sMako Configuration%s\r\n", cyan, reset)
 		output += fmt.Sprintf("%s━━━━━━━━━━━━━━━━━━━━━━%s\r\n\r\n", dimBlue, reset)
@@ -230,4 +240,217 @@ func handleUpdate(args []string) (string, error) {
 	default:
 		return fmt.Sprintf("Unknown update command: %s\r\n", args[0]), nil
 	}
+}
+
+// Provider colors for display
+const (
+	colorGemini     = "\033[38;2;66;133;244m"  // Google Blue
+	colorClaude     = "\033[38;2;255;138;76m"  // Claude Orange
+	colorOpenAI     = "\033[38;2;16;163;127m"  // OpenAI Green
+	colorDeepSeek   = "\033[38;2;138;43;226m"  // Purple
+	colorOllama     = "\033[38;2;255;215;0m"   // Gold/Yellow
+	colorOpenRouter = "\033[38;2;255;20;147m"  // Deep Pink/Magenta
+	colorReset      = "\033[0m"
+	colorDimBlue    = "\033[38;2;120;150;180m"
+	colorLightBlue  = "\033[38;2;93;173;226m"
+	colorCyan       = "\033[38;2;0;209;255m"
+	colorGreen      = "\033[38;2;46;204;113m"
+)
+
+// providerColorMap maps provider names to their display colors
+var providerColorMap = map[string]string{
+	"gemini":     colorGemini,
+	"anthropic":  colorClaude,
+	"openai":     colorOpenAI,
+	"deepseek":   colorDeepSeek,
+	"ollama":     colorOllama,
+	"openrouter": colorOpenRouter,
+}
+
+// handleProvidersList displays all configured providers
+func handleProvidersList() string {
+	output := fmt.Sprintf("\r\n%sConfigured AI Providers%s\r\n", colorCyan, colorReset)
+	output += fmt.Sprintf("%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\r\n\r\n", colorDimBlue, colorReset)
+	
+	// Load current config to see active provider
+	cfg, err := config.LoadConfig()
+	activeProvider := "gemini" // default
+	if err == nil {
+		activeProvider = cfg.LLMProvider
+	}
+	
+	// Read .env file to find configured providers
+	makoDir := config.GetMakoDir()
+	envPath := filepath.Join(makoDir, ".env")
+	
+	configuredProviders := make(map[string]bool)
+	
+	if data, err := os.ReadFile(envPath); err == nil {
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.Contains(line, "GEMINI_API_KEY=") && !strings.HasSuffix(line, "=") {
+				configuredProviders["gemini"] = true
+			}
+			if strings.Contains(line, "ANTHROPIC_API_KEY=") && !strings.HasSuffix(line, "=") {
+				configuredProviders["anthropic"] = true
+			}
+			if strings.Contains(line, "OPENAI_API_KEY=") && !strings.HasSuffix(line, "=") {
+				configuredProviders["openai"] = true
+			}
+			if strings.Contains(line, "DEEPSEEK_API_KEY=") && !strings.HasSuffix(line, "=") {
+				configuredProviders["deepseek"] = true
+			}
+			if strings.Contains(line, "OPENROUTER_API_KEY=") && !strings.HasSuffix(line, "=") {
+				configuredProviders["openrouter"] = true
+			}
+		}
+	}
+	
+	// Also check environment variables
+	if os.Getenv("GEMINI_API_KEY") != "" {
+		configuredProviders["gemini"] = true
+	}
+	if os.Getenv("ANTHROPIC_API_KEY") != "" {
+		configuredProviders["anthropic"] = true
+	}
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		configuredProviders["openai"] = true
+	}
+	if os.Getenv("DEEPSEEK_API_KEY") != "" {
+		configuredProviders["deepseek"] = true
+	}
+	if os.Getenv("OPENROUTER_API_KEY") != "" {
+		configuredProviders["openrouter"] = true
+	}
+	
+	// Ollama is always available (local)
+	configuredProviders["ollama"] = true
+	
+	providers := []struct {
+		name        string
+		description string
+		isLocal     bool
+	}{
+		{"gemini", "Google's Gemini", false},
+		{"anthropic", "Anthropic Claude", false},
+		{"openai", "OpenAI GPT Models", false},
+		{"deepseek", "DeepSeek", false},
+		{"openrouter", "OpenRouter", false},
+		{"ollama", "Ollama (Local)", true},
+	}
+	
+	for _, p := range providers {
+		color := providerColorMap[p.name]
+		if color == "" {
+			color = colorReset
+		}
+		
+		status := " "
+		statusColor := colorDimBlue
+		
+		if p.name == activeProvider {
+			status = "●"
+			statusColor = colorGreen
+		} else if configuredProviders[p.name] {
+			status = "○"
+			statusColor = colorDimBlue
+		} else {
+			status = "✕"
+			statusColor = colorDimBlue
+		}
+		
+		output += fmt.Sprintf("  %s%s%s %s%-12s%s %s%s\r\n", 
+			statusColor, status, colorReset,
+			color, p.name, colorReset,
+			colorDimBlue, p.description)
+	}
+	
+	output += fmt.Sprintf("\r\n%s● Active  ○ Configured  ✕ Not configured%s\r\n\r\n", colorDimBlue, colorReset)
+	output += fmt.Sprintf("%sSwitch provider:%s %smako config switch <provider>%s\r\n", colorDimBlue, colorReset, colorCyan, colorReset)
+	output += fmt.Sprintf("%sSetup wizard:%s   %smako setup%s\r\n\r\n", colorDimBlue, colorReset, colorCyan, colorReset)
+	
+	return output
+}
+
+// handleProviderSwitch switches the active AI provider
+func handleProviderSwitch(provider string, cfg *config.Config) (string, error) {
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	
+	// Validate provider
+	validProviders := map[string]string{
+		"gemini":     "gemini",
+		"anthropic":  "anthropic",
+		"claude":     "anthropic", // alias
+		"openai":     "openai",
+		"gpt":        "openai", // alias
+		"deepseek":   "deepseek",
+		"openrouter": "openrouter",
+		"ollama":     "ollama",
+	}
+	
+	normalizedProvider, ok := validProviders[provider]
+	if !ok {
+		return fmt.Sprintf("%sError:%s Unknown provider '%s'\r\n\r\nValid providers: gemini, anthropic, openai, deepseek, openrouter, ollama\r\n", 
+			colorCyan, colorReset, provider), nil
+	}
+	
+	// Check if provider has API key (except ollama)
+	if normalizedProvider != "ollama" {
+		hasKey := false
+		
+		// Check .env file
+		makoDir := config.GetMakoDir()
+		envPath := filepath.Join(makoDir, ".env")
+		
+		envVarName := ""
+		switch normalizedProvider {
+		case "gemini":
+			envVarName = "GEMINI_API_KEY"
+		case "anthropic":
+			envVarName = "ANTHROPIC_API_KEY"
+		case "openai":
+			envVarName = "OPENAI_API_KEY"
+		case "deepseek":
+			envVarName = "DEEPSEEK_API_KEY"
+		case "openrouter":
+			envVarName = "OPENROUTER_API_KEY"
+		}
+		
+		// Check environment
+		if os.Getenv(envVarName) != "" {
+			hasKey = true
+		}
+		
+		// Check .env file
+		if !hasKey {
+			if data, err := os.ReadFile(envPath); err == nil {
+				if strings.Contains(string(data), envVarName+"=") && 
+				   !strings.Contains(string(data), envVarName+"=\n") &&
+				   !strings.Contains(string(data), envVarName+"= ") {
+					hasKey = true
+				}
+			}
+		}
+		
+		if !hasKey {
+			return fmt.Sprintf("%sWarning:%s Provider '%s%s%s' is not configured.\r\n\r\n%sRun %smako setup%s to configure it.%s\r\n", 
+				colorCyan, colorReset, 
+				providerColorMap[normalizedProvider], normalizedProvider, colorReset,
+				colorDimBlue, colorCyan, colorDimBlue, colorReset), nil
+		}
+	}
+	
+	// Update config
+	cfg.LLMProvider = normalizedProvider
+	if err := cfg.Save(); err != nil {
+		return "", fmt.Errorf("failed to save config: %w", err)
+	}
+	
+	color := providerColorMap[normalizedProvider]
+	if color == "" {
+		color = colorReset
+	}
+	
+	return fmt.Sprintf("%s✓ Switched to %s%s%s\r\n", colorGreen, color, normalizedProvider, colorReset), nil
 }

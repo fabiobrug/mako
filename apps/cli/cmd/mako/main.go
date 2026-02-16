@@ -16,6 +16,7 @@ import (
 	"github.com/fabiobrug/mako.git/internal/cache"
 	"github.com/fabiobrug/mako.git/internal/config"
 	"github.com/fabiobrug/mako.git/internal/database"
+	"github.com/fabiobrug/mako.git/internal/onboarding"
 	"github.com/fabiobrug/mako.git/internal/shell"
 	"github.com/fabiobrug/mako.git/internal/stream"
 	"github.com/joho/godotenv"
@@ -34,8 +35,15 @@ func main() {
 		lightBlue := "\033[38;2;93;173;226m"
 		dimBlue := "\033[38;2;120;150;180m"
 		reset := "\033[0m"
-		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.3.5 %s%s\n", lightBlue, cyan, reset)
+		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.3.6 %s%s\n", lightBlue, cyan, reset)
 			fmt.Printf("%s", dimBlue)
+			return
+		case "setup":
+			// Run the onboarding wizard
+			if err := onboarding.RunWizard(); err != nil {
+				fmt.Fprintf(os.Stderr, "Setup failed: %v\n", err)
+				os.Exit(1)
+			}
 			return
 		case "ask", "history", "stats", "config", "update":
 			lightBlue := "\033[38;2;93;173;226m"
@@ -50,7 +58,8 @@ func main() {
 
 	// Check for first run and run setup wizard
 	if config.IsFirstRun() {
-		if err := config.RunFirstTimeSetup(); err != nil {
+		// Run the interactive onboarding wizard
+		if err := onboarding.RunWizard(); err != nil {
 			fmt.Fprintf(os.Stderr, "Setup failed: %v\n", err)
 			os.Exit(1)
 		}
@@ -80,6 +89,7 @@ func showHelp() {
 %s│%s
 %s│%s %sUSAGE:%s
 %s│%s   %smako%s                                Start Mako shell wrapper
+%s│%s   %smako setup%s                          Run/re-run setup wizard
 %s│%s   %smako ask <question>%s                 Generate shell command from natural language
 %s│%s   %smako history%s                        Show recent command history
 %s│%s   %smako history <keyword>%s              Search history by keyword
@@ -111,6 +121,7 @@ func showHelp() {
 
 `, cyan, reset,
 		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,

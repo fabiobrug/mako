@@ -55,7 +55,20 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.3.5
+## What's New in v1.3.6
+
+**✨ Interactive Onboarding & Provider Management**
+
+- **Beautiful onboarding wizard**: First-run experience with ASCII art, color-coded providers, and step-by-step setup
+- **Multi-provider configuration**: Set up multiple AI providers (Gemini, Claude, OpenAI, DeepSeek, Ollama, OpenRouter) in one flow
+- **Easy provider switching**: `mako config switch <provider>` to change active provider instantly
+- **Provider management**: `mako config providers` to view all configured providers with status indicators
+- **Re-runnable setup**: `mako setup` command to add providers or reconfigure at any time
+- **Secure API key storage**: Keys stored in `~/.mako/.env` with proper permissions (0600)
+- **Smart defaults**: Skippable wizard with intelligent recommendations
+- **Color-coded UI**: Each provider has distinct colors (Blue/Orange/Green/Purple/Yellow/Magenta) for easy identification
+
+**Previous Release - v1.3.5**
 
 **🎯 Embedding Model Fix - Production Ready**
 

@@ -2,6 +2,66 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.3.6] - 2026-02-16
+
+### Added - Interactive Onboarding & Provider Management ✨
+
+**Onboarding Wizard**
+- **Beautiful first-run experience**: Interactive wizard with ASCII art banner and color-coded UI
+- **Multi-provider setup**: Configure multiple AI providers (Gemini, Claude, OpenAI, DeepSeek, Ollama, OpenRouter) in single flow
+- **Skippable wizard**: Type 'skip' to use defaults, or run `mako setup` anytime to configure
+- **Smart defaults**: Gemini recommended as default, medium safety level, auto-update enabled
+- **Secure storage**: API keys stored in `~/.mako/.env` with 0600 permissions
+- **Progressive disclosure**: Only asks for relevant information (no API key for Ollama)
+- **Validation**: Checks API key format and detects existing environment variables
+
+**Provider Management Commands**
+- **List providers**: `mako config providers` shows all configured providers with color-coded status (● Active, ○ Configured, ✕ Not configured)
+- **Switch providers**: `mako config switch <provider>` changes active provider instantly
+- **Provider aliases**: Support for `claude` → `anthropic`, `gpt` → `openai`
+- **Re-run setup**: `mako setup` command allows adding providers or reconfiguring at any time
+
+**Visual Design**
+- **Color-coded providers**: Each AI provider has distinct color for instant recognition
+  - Gemini: Google Blue (#4285F4)
+  - Claude/Anthropic: Orange (#FF8A4C)
+  - OpenAI: Green (#10A37F)
+  - DeepSeek: Purple (#8A2BE2)
+  - Ollama: Yellow/Gold (#FFD700)
+  - OpenRouter: Magenta (#FF1493)
+- **Consistent theming**: Uses Mako's signature color palette throughout
+- **Clear visual hierarchy**: Step-by-step sections with dividers and status indicators
+
+**Documentation**
+- **Comprehensive guide**: Added `docs/ONBOARDING.md` with complete documentation
+- **User flow examples**: Visual representations of each wizard step
+- **Command reference**: Full documentation for all provider management commands
+- **Security considerations**: API key storage and permissions explained
+- **Troubleshooting guide**: Common issues and solutions
+
+**Files Added**
+- `apps/cli/internal/onboarding/wizard.go` - Complete wizard implementation
+- `docs/ONBOARDING.md` - Comprehensive onboarding documentation
+
+**Files Modified**
+- `apps/cli/cmd/mako/main.go` - Added wizard trigger and `mako setup` command
+- `apps/cli/internal/config/firstrun.go` - Updated first-run detection
+- `apps/cli/internal/shell/config.go` - Added provider management commands
+- `apps/cli/internal/shell/text.go` - Updated help text with new commands
+- `GROWTH.md` - Marked User Onboarding section as completed
+
+**Impact**
+- World-class first-run experience matching/exceeding Warp and Claude Code
+- Easy multi-provider setup encourages trying different models
+- Instant provider switching without restart or manual config editing
+- Better user retention with polished onboarding flow
+- Privacy-first design with local API key storage
+
+**Inspiration**
+- Warp: Beautiful welcome screens and guided flows
+- Claude Code: Clean provider selection interface
+- Mako Improvements: Multi-provider support, color coding, instant switching
+
 ## [1.3.5] - 2026-02-16
 
 ### Fixed - Embedding Model Critical Fix 🎯

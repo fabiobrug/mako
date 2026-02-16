@@ -33,6 +33,8 @@ func getHelpText() string {
 %s│%s  %smako config get <key>%s            Get configuration value
 %s│%s  %smako config set <key> <value>%s    Set configuration value
 %s│%s  %smako config reset%s                Reset to default configuration
+%s│%s  %smako config providers%s            List all configured AI providers
+%s│%s  %smako config switch <provider>%s    Switch active AI provider
 %s│%s  
 %s│%s  %smako update check%s                Check for updates
 %s│%s  %smako update install%s              Install latest version
@@ -68,6 +70,8 @@ func getHelpText() string {
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
+		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
