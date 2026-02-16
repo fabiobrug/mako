@@ -147,7 +147,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 		case "help":
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v1.3.2\n"), nil
+			return true, fmt.Sprintf("v1.3.3\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
 		case "clear":
@@ -1673,6 +1673,8 @@ func handleConfig(args []string) (string, error) {
 		output := fmt.Sprintf("\r\n%sMako Configuration%s\r\n", cyan, reset)
 		output += fmt.Sprintf("%s━━━━━━━━━━━━━━━━━━━━━━%s\r\n\r\n", dimBlue, reset)
 		
+		// File-based configuration
+		output += fmt.Sprintf("%sFile Config (~/.mako/config.json):%s\r\n", dimBlue, reset)
 		settings := cfg.List()
 		for key, value := range settings {
 			// Hide API key (show only first 10 chars)
@@ -1685,6 +1687,62 @@ func handleConfig(args []string) (string, error) {
 			}
 			output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, key, reset, value)
 		}
+		
+		// Environment variables for LLM provider
+		output += fmt.Sprintf("\r\n%sLLM Provider (from environment):%s\r\n", dimBlue, reset)
+		llmProvider := os.Getenv("LLM_PROVIDER")
+		llmModel := os.Getenv("LLM_MODEL")
+		llmAPIKey := os.Getenv("LLM_API_KEY")
+		llmBaseURL := os.Getenv("LLM_API_BASE")
+		
+		if llmProvider == "" {
+			llmProvider = "(using config file or default: gemini)"
+		}
+		if llmModel == "" {
+			llmModel = "(provider default)"
+		}
+		if llmAPIKey == "" {
+			llmAPIKey = "(not set)"
+		} else if len(llmAPIKey) > 10 {
+			llmAPIKey = llmAPIKey[:10] + "..."
+		}
+		if llmBaseURL == "" {
+			llmBaseURL = "(provider default)"
+		}
+		
+		output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, "provider", reset, llmProvider)
+		output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, "model", reset, llmModel)
+		output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, "api_key", reset, llmAPIKey)
+		output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, "base_url", reset, llmBaseURL)
+		
+		// Environment variables for Embedding provider
+		output += fmt.Sprintf("\r\n%sEmbedding Provider (from environment):%s\r\n", dimBlue, reset)
+		embProvider := os.Getenv("EMBEDDING_PROVIDER")
+		embModel := os.Getenv("EMBEDDING_MODEL")
+		embAPIKey := os.Getenv("EMBEDDING_API_KEY")
+		embBaseURL := os.Getenv("EMBEDDING_API_BASE")
+		
+		if embProvider == "" {
+			embProvider = "(using LLM provider)"
+		}
+		if embModel == "" {
+			embModel = "(provider default)"
+		}
+		if embAPIKey == "" {
+			embAPIKey = "(using LLM API key)"
+		} else if len(embAPIKey) > 10 {
+			embAPIKey = embAPIKey[:10] + "..."
+		}
+		if embBaseURL == "" {
+			embBaseURL = "(provider default)"
+		}
+		
+		output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, "provider", reset, embProvider)
+		output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, "model", reset, embModel)
+		output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, "api_key", reset, embAPIKey)
+		output += fmt.Sprintf("  %s%-20s%s %v\r\n", lightBlue, "base_url", reset, embBaseURL)
+		
+		output += fmt.Sprintf("\r\n%sTip:%s Use 'mako health' to validate your configuration\r\n", dimBlue, reset)
 		output += "\r\n"
 		return output, nil
 

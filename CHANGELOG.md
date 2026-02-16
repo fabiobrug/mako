@@ -2,17 +2,44 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.3.3] - 2026-02-15
+
+### Added - Enhanced Embedding Configuration & Documentation 📚
+
+**Documentation Improvements**
+- **Comprehensive embedding guide**: Added detailed explanation of what embeddings are and why Mako needs them
+- **Installation guide updates**: README now includes step-by-step embedding configuration for all providers
+- **Setup examples**: Added local Ollama embedding setup instructions for free, private semantic search
+- **Benefits explained**: Clear documentation on semantic search vs traditional text search
+
+**Command Enhancements**
+- **Enhanced health check**: `mako health` now validates embedding provider configuration separately
+- **Improved config list**: `mako config list` displays both LLM and embedding provider settings with clear separation
+- **Better visibility**: Shows which provider/model is being used for embeddings and whether semantic search is enabled
+
+**Configuration**
+- **Default model documentation**: Added comments in .env.example showing default embedding models per provider
+- **Troubleshooting**: Added tips for testing embedding configuration with `mako health`
+
+**Impact**
+- Users can now easily understand and configure embeddings for semantic search
+- Clear separation between LLM provider (command generation) and embedding provider (semantic search)
+- Better troubleshooting with dedicated health checks for embedding configuration
+- Improved onboarding with comprehensive documentation
+
 ## [1.3.2] - 2026-02-15
 
 ### Fixed - Embedding Model Configuration 🐛
 
-**Bug Fix**
+**Bug Fixes**
 - **Fixed semantic search with custom LLM models**: Resolved issue where `mako history semantic` would fail with a 404 error when using a custom `LLM_MODEL` setting
-- **Root cause**: The embedding provider was incorrectly inheriting the text generation model (e.g., `gemini-2.5-flash`) instead of using the proper embedding model (`text-embedding-004`)
-- **Solution**: Modified `LoadEmbeddingProviderConfig()` to use provider and API key from LLM config but NOT inherit the model, allowing each provider to use its correct default embedding model
+- **Updated to current Gemini embedding model**: Changed from deprecated `text-embedding-004` (removed Jan 14, 2026) to current `text-embedding-005`
+- **Root cause**: Two issues - (1) embedding provider was inheriting the text generation model, and (2) using a deprecated embedding model
+- **Solution**: Modified `LoadEmbeddingProviderConfig()` to properly separate embedding models from LLM models, and updated to `text-embedding-005`
 
 **Impact**
 - Semantic search (`mako history semantic`) now works correctly regardless of your `LLM_MODEL` configuration
+- Using current, supported Gemini embedding model (768-dimensional vectors)
 - Embedding models are now properly separated from text generation models
 - Users no longer encounter "model not found for embedContent" errors
 

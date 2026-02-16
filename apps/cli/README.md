@@ -55,11 +55,21 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.3.2
+## What's New in v1.3.3
+
+**📚 Enhanced Embedding Configuration & Documentation**
+
+- **Comprehensive embedding guides**: Added detailed documentation on what embeddings are and why they're needed
+- **Configuration examples**: Step-by-step setup for embedding models across all providers
+- **Health check enhancements**: `mako health` now validates embedding configuration
+- **Config list improvements**: `mako config list` displays embedding provider settings
+- **Better documentation**: Installation guide and frontend docs include embedding setup
+
+**Previous Release - v1.3.2**
 
 **🐛 Embedding Model Configuration Fix**
 
-- **Fixed semantic search**: Corrected embedding provider to use proper model (text-embedding-004) instead of inheriting LLM model
+- **Fixed semantic search**: Updated to use current Gemini embedding model (text-embedding-005, as text-embedding-004 was deprecated in Jan 2026)
 - **Bug fix**: Resolved 404 error when using `mako history semantic` with custom LLM_MODEL configuration
 - **Improved model separation**: Embedding and text generation models now properly independent
 
@@ -385,6 +395,106 @@ Mako stores data in `~/.mako/`:
 
 No configuration file is required. The tool works out of the box with sensible defaults.
 
+### Understanding Embeddings
+
+**What are embeddings?**
+
+Embeddings are numerical representations of text that capture semantic meaning. Think of them as "coordinates" in a multi-dimensional space where similar meanings are close together.
+
+For example:
+- "list files" and "show directory contents" will have similar embeddings
+- "delete everything" and "remove files" will be close together
+- "create file" and "compress video" will be far apart
+
+**Why does Mako need embeddings?**
+
+Mako uses embeddings to power **semantic search** in your command history:
+
+```bash
+# Traditional search: exact text match only
+mako history "docker ps"  # Finds only: docker ps
+
+# Semantic search: finds by meaning
+mako history semantic "show running containers"
+# Finds: docker ps, docker container ls, kubectl get pods, etc.
+```
+
+This allows you to search your history by describing what you want to do, even if you don't remember the exact command syntax.
+
+**When are embeddings generated?**
+
+- **Automatically**: When you run commands, Mako generates embeddings in the background
+- **Async processing**: Doesn't slow down your terminal
+- **Cached**: Once generated, embeddings are stored in the database
+- **Only for semantic search**: Regular history search (`mako history`) doesn't need embeddings
+
+### Embedding Configuration
+
+By default, Mako uses the same AI provider for both command generation and embeddings. You can optionally configure a separate embedding provider.
+
+**Default embedding models by provider:**
+- **Gemini**: `text-embedding-005` (768-dimensional)
+- **OpenAI**: `text-embedding-3-small` (1536-dimensional)
+- **Ollama**: `nomic-embed-text` (local, free)
+
+**Using the same provider (recommended):**
+
+```bash
+# In your .env file
+LLM_PROVIDER=gemini
+LLM_API_KEY=your-api-key
+# Embeddings will automatically use gemini + text-embedding-005
+```
+
+**Using a different provider for embeddings:**
+
+This is useful if you want to:
+- Use free local embeddings (Ollama) while using a cloud LLM
+- Optimize costs by using cheaper embedding models
+- Keep embeddings private on your machine
+
+```bash
+# In your .env file
+LLM_PROVIDER=gemini
+LLM_API_KEY=your-gemini-key
+
+# Use local Ollama for embeddings (free!)
+EMBEDDING_PROVIDER=ollama
+EMBEDDING_MODEL=nomic-embed-text
+EMBEDDING_API_BASE=http://localhost:11434
+```
+
+**Setting up local embeddings with Ollama:**
+
+```bash
+# 1. Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 2. Pull an embedding model
+ollama pull nomic-embed-text
+
+# 3. Configure Mako
+export EMBEDDING_PROVIDER=ollama
+export EMBEDDING_MODEL=nomic-embed-text
+export EMBEDDING_API_BASE=http://localhost:11434
+
+# 4. Verify
+mako health
+```
+
+**Check your embedding configuration:**
+
+```bash
+# View current configuration
+mako config list
+
+# Test embedding health
+mako health
+
+# Test semantic search
+mako history semantic "your search query"
+```
+
 ### Database Schema
 
 The database automatically migrates to the latest schema on startup:
@@ -399,7 +509,7 @@ The database automatically migrates to the latest schema on startup:
 - **Language**: Go 1.24+
 - **AI Provider**: Google Gemini API
   - `gemini-2.0-flash-exp` for command generation
-  - `text-embedding-004` for semantic search (768-dimensional vectors)
+  - `text-embedding-005` for semantic search (768-dimensional vectors)
 - **Database**: SQLite with FTS5 for hybrid search
 - **Terminal**: PTY via `creack/pty`
 

@@ -85,6 +85,13 @@ func (c *Checker) Check() (*HealthReport, error) {
 		report.OverallOK = false
 	}
 
+	// Check embedding provider
+	embeddingHealth := c.checkEmbeddingProvider()
+	report.Components = append(report.Components, embeddingHealth)
+	if embeddingHealth.Status == StatusError {
+		report.OverallOK = false
+	}
+
 	// Generate suggestions
 	report.Suggestions = c.generateSuggestions(report.Components)
 
@@ -293,6 +300,108 @@ func (c *Checker) checkDiskSpace() ComponentHealth {
 		health.Message = fmt.Sprintf("%d MB / %d MB limit", sizeMB, maxSizeMB)
 	}
 
+	return health
+}
+
+// checkEmbeddingProvider verifies embedding provider configuration
+func (c *Checker) checkEmbeddingProvider() ComponentHealth {
+	health := ComponentHealth{
+		Name:    "Embedding Provider",
+		Details: make(map[string]interface{}),
+	}
+
+	// Get embedding provider configuration from environment variables
+	embeddingProvider := os.Getenv("EMBEDDING_PROVIDER")
+	embeddingModel := os.Getenv("EMBEDDING_MODEL")
+	embeddingAPIKey := os.Getenv("EMBEDDING_API_KEY")
+	embeddingBaseURL := os.Getenv("EMBEDDING_API_BASE")
+	
+	// Get LLM provider as fallback
+	llmProvider := os.Getenv("LLM_PROVIDER")
+	llmAPIKey := os.Getenv("LLM_API_KEY")
+	
+	// If not in env, try loading from config file
+	if llmProvider == "" || llmAPIKey == "" {
+		if cfg, err := config.LoadConfig(); err == nil {
+			if llmProvider == "" && cfg.LLMProvider != "" {
+				llmProvider = cfg.LLMProvider
+			}
+			if llmAPIKey == "" && cfg.APIKey != "" {
+				llmAPIKey = cfg.APIKey
+			}
+		}
+	}
+	
+	// Legacy fallback
+	if llmAPIKey == "" {
+		llmAPIKey = os.Getenv("GEMINI_API_KEY")
+	}
+	
+	// Determine which provider is being used for embeddings
+	if embeddingProvider == "" {
+		embeddingProvider = llmProvider
+		if embeddingProvider == "" {
+			embeddingProvider = "gemini" // default
+		}
+	}
+	
+	health.Details["provider"] = embeddingProvider
+	
+	// Set default models based on provider
+	defaultModel := embeddingModel
+	if defaultModel == "" {
+		switch embeddingProvider {
+		case "gemini":
+			defaultModel = "text-embedding-005"
+		case "openai":
+			defaultModel = "text-embedding-3-small"
+		case "ollama":
+			defaultModel = "nomic-embed-text"
+		default:
+			defaultModel = "default"
+		}
+	}
+	health.Details["model"] = defaultModel
+	
+	// Check if provider requires API key
+	if embeddingProvider == "ollama" {
+		// Ollama doesn't require API key
+		if embeddingBaseURL == "" {
+			embeddingBaseURL = "http://localhost:11434"
+		}
+		health.Status = StatusOK
+		health.Message = fmt.Sprintf("Using %s (local, model: %s)", embeddingProvider, defaultModel)
+		health.Details["base_url"] = embeddingBaseURL
+		health.Details["semantic_search"] = "enabled"
+		return health
+	}
+	
+	// Check API key for cloud providers
+	actualAPIKey := embeddingAPIKey
+	if actualAPIKey == "" {
+		actualAPIKey = llmAPIKey
+	}
+	
+	if actualAPIKey == "" {
+		health.Status = StatusError
+		health.Message = fmt.Sprintf("API key not set for %s embedding provider", embeddingProvider)
+		health.Details["help"] = "Set EMBEDDING_API_KEY or LLM_API_KEY in .env"
+		health.Details["semantic_search"] = "disabled"
+		return health
+	}
+	
+	// Basic validation
+	if len(actualAPIKey) < 20 {
+		health.Status = StatusWarning
+		health.Message = fmt.Sprintf("Using %s - API key looks invalid (too short)", embeddingProvider)
+		health.Details["semantic_search"] = "may not work"
+	} else {
+		health.Status = StatusOK
+		health.Message = fmt.Sprintf("Using %s (model: %s)", embeddingProvider, defaultModel)
+		health.Details["key_length"] = len(actualAPIKey)
+		health.Details["semantic_search"] = "enabled"
+	}
+	
 	return health
 }
 

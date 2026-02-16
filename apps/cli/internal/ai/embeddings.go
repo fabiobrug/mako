@@ -33,7 +33,7 @@ func NewGeminiEmbeddingProvider(cfg *ProviderConfig) (*GeminiEmbeddingProvider, 
 	// Default model if not specified
 	model := cfg.Model
 	if model == "" {
-		model = "text-embedding-004"
+		model = "text-embedding-005"
 	}
 
 	return &GeminiEmbeddingProvider{
