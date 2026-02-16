@@ -87,52 +87,52 @@ mako config reset --force`}</CodeBlock>
 
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Available Configuration Keys</h3>
-          <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
-              <code className="font-mono text-primary text-sm">llm_provider</code>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+          <div className="space-y-2">
+            <div className="flex items-start gap-4 py-3 hover:bg-muted-foreground/5 transition-colors rounded px-2">
+              <code className="font-mono text-sm text-primary shrink-0 w-40">llm_provider</code>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 AI provider (openai, anthropic, gemini, deepseek, openrouter, ollama)
               </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <code className="font-mono text-primary text-sm">llm_model</code>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+            <div className="flex items-start gap-4 py-3 hover:bg-muted-foreground/5 transition-colors rounded px-2">
+              <code className="font-mono text-sm text-primary shrink-0 w-40">llm_model</code>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Model name for your provider (e.g., gpt-4o-mini, claude-3-5-haiku-20241022)
               </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <code className="font-mono text-primary text-sm">llm_base_url</code>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+            <div className="flex items-start gap-4 py-3 hover:bg-muted-foreground/5 transition-colors rounded px-2">
+              <code className="font-mono text-sm text-primary shrink-0 w-40">llm_base_url</code>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Base URL for API calls (optional, for custom endpoints or Ollama)
               </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <code className="font-mono text-primary text-sm">api_key</code>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+            <div className="flex items-start gap-4 py-3 hover:bg-muted-foreground/5 transition-colors rounded px-2">
+              <code className="font-mono text-sm text-primary shrink-0 w-40">api_key</code>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Your API key (not required for Ollama)
               </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <code className="font-mono text-primary text-sm">max_history</code>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+            <div className="flex items-start gap-4 py-3 hover:bg-muted-foreground/5 transition-colors rounded px-2">
+              <code className="font-mono text-sm text-primary shrink-0 w-40">max_history</code>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Maximum number of commands to store (default: 1000)
               </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <code className="font-mono text-primary text-sm">auto_suggest</code>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+            <div className="flex items-start gap-4 py-3 hover:bg-muted-foreground/5 transition-colors rounded px-2">
+              <code className="font-mono text-sm text-primary shrink-0 w-40">auto_suggest</code>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Enable automatic command suggestions (default: true)
               </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <code className="font-mono text-primary text-sm">safety_checks</code>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+            <div className="flex items-start gap-4 py-3 hover:bg-muted-foreground/5 transition-colors rounded px-2">
+              <code className="font-mono text-sm text-primary shrink-0 w-40">safety_checks</code>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 Enable safety validation for dangerous commands (default: true)
               </p>
             </div>
@@ -142,24 +142,28 @@ mako config reset --force`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Invalid Configuration Key</h4>
-              <CodeBlock>{`mako config set invalid_key value
-# Error: Unknown configuration key 'invalid_key'
-# Use 'mako config list' to see available keys`}</CodeBlock>
+              <CodeBlock>{`mako config set invalid_key value`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Unknown configuration key 'invalid_key'. Use <code className="text-primary text-xs">mako config list</code> to see available keys.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Invalid Value Type</h4>
-              <CodeBlock>{`mako config set max_history "not a number"
-# Error: Invalid value for 'max_history': expected integer`}</CodeBlock>
+              <CodeBlock>{`mako config set max_history "not a number"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Invalid value for 'max_history': expected integer
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Configuration File Issues</h4>
-              <CodeBlock>{`# If config file is corrupted
-Error: Failed to read configuration file
-Solution: Reset configuration with 'mako config reset'`}</CodeBlock>
+              <CodeBlock>{`Error: Failed to read configuration file`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Solution: Reset configuration with <code className="text-primary text-xs">mako config reset</code>
+              </p>
             </div>
           </div>
         </div>

@@ -31,7 +31,7 @@ mako import ~/backups/mako-backup-20240212.json
 # Importing commands from history.json...
 # Found 150 commands
 # Importing... [████████████████] 100%
-# ✓ Successfully imported 150 commands`}</CodeBlock>
+# Successfully imported 150 commands`}</CodeBlock>
         </div>
 
         <div>
@@ -67,37 +67,36 @@ mako import ~/.local/share/fish/fish_history --format fish`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">File Not Found</h4>
-              <CodeBlock>{`mako import nonexistent.json
-# Error: File not found: nonexistent.json`}</CodeBlock>
+              <CodeBlock>{`mako import nonexistent.json`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: File not found: nonexistent.json
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Invalid JSON Format</h4>
-              <CodeBlock>{`mako import invalid.json
-# Error: Invalid JSON format
-# Expected array of command objects with 'command' and 'timestamp' fields`}</CodeBlock>
+              <CodeBlock>{`mako import invalid.json`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Invalid JSON format. Expected array of command objects with 'command' and 'timestamp' fields.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Duplicate Commands</h4>
-              <CodeBlock>{`mako import history.json
-# Found 100 commands
-# Skipped 25 duplicates
-# ✓ Successfully imported 75 new commands
-
-# Use --replace to import all including duplicates`}</CodeBlock>
+              <CodeBlock>{`mako import history.json`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Found 100 commands, skipped 25 duplicates. Successfully imported 75 new commands. Use --replace to import all including duplicates.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Large Import</h4>
-              <CodeBlock>{`mako import large-history.json
-# Warning: This file contains 10,000 commands
-# This may take a few minutes. Continue? [y/N]
-
-# Skip confirmation
-mako import large-history.json --yes`}</CodeBlock>
+              <CodeBlock>{`mako import large-history.json`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Warning: This file contains 10,000 commands. This may take a few minutes. Use <code className="text-primary text-xs">--yes</code> to skip confirmation.
+              </p>
             </div>
           </div>
         </div>

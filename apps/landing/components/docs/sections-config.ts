@@ -10,6 +10,19 @@ export const sections = [
   { id: "help", label: "Help", icon: HelpCircle },
 ];
 
+export const installList = [
+  { id: "quick-install", label: "Quick Install" },
+  { id: "from-source", label: "Build From Source" },
+  { id: "post-install", label: "Post-Installation" },
+];
+
+export const agentConfigList = [
+  { id: "overview", label: "Overview" },
+  { id: "ollama", label: "Ollama (Local)" },
+  { id: "cloud-providers", label: "Cloud Providers" },
+  { id: "advanced", label: "Advanced Options" },
+];
+
 export const commandsList = [
   { id: "ask", label: "mako ask" },
   { id: "history", label: "mako history" },

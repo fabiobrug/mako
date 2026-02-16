@@ -22,7 +22,7 @@ export const HelpSection = () => (
     
     <div className="space-y-6">
       <div className="bg-code border border-border rounded-lg p-6">
-        <h3 className="font-mono text-base font-semibold text-foreground mb-3">🔧 Mako changes directory instead of starting (Zsh)</h3>
+        <h3 className="font-mono text-base font-semibold text-foreground mb-3">Mako changes directory instead of starting (Zsh)</h3>
         <p className="text-muted-foreground text-sm leading-relaxed mb-3">
           <strong className="text-foreground">Problem:</strong> Running <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">mako</code> from home directory changes to <code className="font-mono text-primary bg-background px-1 py-0.5 rounded">~/mako</code> directory instead of starting the shell.
         </p>

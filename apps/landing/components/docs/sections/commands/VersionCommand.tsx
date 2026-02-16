@@ -65,7 +65,7 @@ mako version --check
 # Output (if up to date):
 # Current: v1.5.0
 # Latest:  v1.5.0
-# ✓ You're running the latest version
+# You're running the latest version
 
 # Output (if update available):
 # Current: v1.4.2
@@ -121,11 +121,20 @@ mako version --all
           <p className="text-muted-foreground text-sm leading-relaxed mb-3">
             Mako follows semantic versioning (MAJOR.MINOR.PATCH):
           </p>
-          <div className="bg-code border border-border rounded-lg p-4 mb-4">
-            <ul className="list-disc list-inside text-muted-foreground text-sm space-y-2">
-              <li><strong className="text-foreground">MAJOR (1.x.x):</strong> Breaking changes, may require reconfiguration</li>
-              <li><strong className="text-foreground">MINOR (x.5.x):</strong> New features, backward compatible</li>
-              <li><strong className="text-foreground">PATCH (x.x.0):</strong> Bug fixes, fully compatible</li>
+          <div className="border-l-2 border-primary/30 pl-4 py-3 mb-4">
+            <ul className="space-y-2 text-muted-foreground text-sm">
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span><strong className="text-foreground">MAJOR (1.x.x):</strong> Breaking changes, may require reconfiguration</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span><strong className="text-foreground">MINOR (x.5.x):</strong> New features, backward compatible</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">•</span>
+                <span><strong className="text-foreground">PATCH (x.x.0):</strong> Bug fixes, fully compatible</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -133,35 +142,28 @@ mako version --all
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Development Build</h4>
-              <CodeBlock>{`mako version
-
-# Output:
-# Mako v1.6.0-dev
-# Build: development
-# This is a development build, not for production use`}</CodeBlock>
+              <CodeBlock>{`mako version`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Output: Mako v1.6.0-dev (Build: development). This is a development build, not for production use.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Version Mismatch</h4>
-              <CodeBlock>{`mako version --all
-
-# Output:
-# Warning: Component version mismatch
-# mako:       v1.5.0
-# mako-menu:  v1.4.2
-# 
-# Recommendation: Run 'mako update install' to sync versions`}</CodeBlock>
+              <CodeBlock>{`mako version --all`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Warning: Component version mismatch (mako: v1.5.0, mako-menu: v1.4.2). Recommendation: Run <code className="text-primary text-xs">mako update install</code> to sync versions.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Cannot Check for Updates</h4>
-              <CodeBlock>{`mako version --check
-
-# Error: Cannot connect to update server
-# Current version: v1.5.0
-# Unable to check for updates (offline)`}</CodeBlock>
+              <CodeBlock>{`mako version --check`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Cannot connect to update server (Current version: v1.5.0). Unable to check for updates (offline).
+              </p>
             </div>
           </div>
         </div>

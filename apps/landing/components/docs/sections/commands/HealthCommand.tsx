@@ -92,46 +92,44 @@ mako health --reinstall-shell`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Common Issues</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">ERROR: API Key Not Found</h4>
-              <CodeBlock>{`[FAIL] API Key not configured
-Solution: Configure your API key
-  mako config set api_key your-key-here
-Or set environment variable for your provider`}</CodeBlock>
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">API Key Not Found</h4>
+              <CodeBlock>{`[FAIL] API Key not configured`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Solution: Configure your API key with <code className="text-primary text-xs">mako config set api_key your-key-here</code> or set environment variable for your provider
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">ERROR: Database Corruption</h4>
-              <CodeBlock>{`[FAIL] Database integrity check failed
-Solution: Repair database with:
-  mako health --repair-database
-Or backup and recreate:
-  cp ~/.mako/mako.db ~/.mako/mako.db.backup
-  rm ~/.mako/mako.db
-  mako  # Will recreate on next start`}</CodeBlock>
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Database Corruption</h4>
+              <CodeBlock>{`[FAIL] Database integrity check failed`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Solution: Repair database with <code className="text-primary text-xs">mako health --repair-database</code>. Or backup and recreate by removing <code className="text-primary text-xs">~/.mako/mako.db</code> (will recreate on next start)
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">ERROR: Shell Integration Inactive</h4>
-              <CodeBlock>{`[FAIL] Shell integration not detected
-Solution: Reinstall shell hooks:
-  mako health --reinstall-shell
-Then restart your shell:
-  exec $SHELL`}</CodeBlock>
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Shell Integration Inactive</h4>
+              <CodeBlock>{`[FAIL] Shell integration not detected`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Solution: Reinstall shell hooks with <code className="text-primary text-xs">mako health --reinstall-shell</code>, then restart your shell with <code className="text-primary text-xs">exec $SHELL</code>
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">WARNING: Low Disk Space</h4>
-              <CodeBlock>{`[WARNING] Low disk space detected (< 1GB available)
-Database size: 850MB
-Recommendation: Clean up old history
-  mako history --clear --before "6 months ago"`}</CodeBlock>
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Low Disk Space</h4>
+              <CodeBlock>{`[WARNING] Low disk space detected (< 1GB available)`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Database size: 850MB. Recommendation: Clean up old history with <code className="text-primary text-xs">mako history --clear --before "6 months ago"</code>
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">WARNING: Outdated Version</h4>
-              <CodeBlock>{`[INFO] Update available: v1.5.0 (current: v1.4.2)
-Run: curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash`}</CodeBlock>
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Outdated Version</h4>
+              <CodeBlock>{`[INFO] Update available: v1.5.0 (current: v1.4.2)`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Run: <code className="text-primary text-xs">curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash</code>
+              </p>
             </div>
           </div>
         </div>

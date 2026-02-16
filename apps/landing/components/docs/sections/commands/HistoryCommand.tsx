@@ -145,24 +145,28 @@ mako history --clear --failed`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Empty History</h4>
-              <CodeBlock>{`mako history
-# Output: No command history found
-# Run some commands to start building your history`}</CodeBlock>
+              <CodeBlock>{`mako history`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Output: No command history found. Run some commands to start building your history.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Corrupted Database</h4>
-              <CodeBlock>{`Error: Database error: unable to read history
-Solution: Run 'mako health' to diagnose and repair`}</CodeBlock>
+              <CodeBlock>{`Error: Database error: unable to read history`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Solution: Run <code className="text-primary text-xs">mako health</code> to diagnose and repair
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Semantic Search Without Internet</h4>
-              <CodeBlock>{`mako history semantic "backup"
-# Falls back to text search when offline
-# Using text search instead (AI features unavailable)`}</CodeBlock>
+              <CodeBlock>{`mako history semantic "backup"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Falls back to text search when offline. Using text search instead (AI features unavailable)
+              </p>
             </div>
           </div>
         </div>

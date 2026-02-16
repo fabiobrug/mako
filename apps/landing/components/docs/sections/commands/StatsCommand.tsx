@@ -105,18 +105,20 @@ mako stats --format html --output report.html`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Insufficient Data</h4>
-              <CodeBlock>{`mako stats
-# Output: Not enough data for meaningful statistics
-# Run at least 10 commands to see statistics`}</CodeBlock>
+              <CodeBlock>{`mako stats`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Output: Not enough data for meaningful statistics. Run at least 10 commands to see statistics.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Invalid Date Range</h4>
-              <CodeBlock>{`mako stats --since "invalid date"
-# Error: Invalid date format
-# Use: YYYY-MM-DD or relative dates like "1 week ago"`}</CodeBlock>
+              <CodeBlock>{`mako stats --since "invalid date"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Invalid date format. Use: YYYY-MM-DD or relative dates like "1 week ago"
+              </p>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Github, Menu, X, ChevronDown } from "lucide-react";
-import { sections, commandsList } from "./sections-config";
+import { sections, installList, agentConfigList, commandsList } from "./sections-config";
 
 interface DocsLayoutProps {
   children: ReactNode;
@@ -12,6 +12,14 @@ interface DocsLayoutProps {
   setActiveSection: (section: string) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+  installExpanded: boolean;
+  setInstallExpanded: (expanded: boolean) => void;
+  activeInstall: string | null;
+  setActiveInstall: (install: string | null) => void;
+  agentConfigExpanded: boolean;
+  setAgentConfigExpanded: (expanded: boolean) => void;
+  activeAgentConfig: string | null;
+  setActiveAgentConfig: (config: string | null) => void;
   commandsExpanded: boolean;
   setCommandsExpanded: (expanded: boolean) => void;
   activeCommand: string | null;
@@ -24,6 +32,14 @@ export const DocsLayout = ({
   setActiveSection,
   sidebarOpen,
   setSidebarOpen,
+  installExpanded,
+  setInstallExpanded,
+  activeInstall,
+  setActiveInstall,
+  agentConfigExpanded,
+  setAgentConfigExpanded,
+  activeAgentConfig,
+  setActiveAgentConfig,
   commandsExpanded,
   setCommandsExpanded,
   activeCommand,
@@ -38,7 +54,7 @@ export const DocsLayout = ({
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
         className="border-b border-border sticky top-0 z-20 bg-background/95 backdrop-blur"
       >
-        <div className="max-w-6xl mx-auto px-6 h-12 flex items-center justify-between">
+        <div className="px-6 h-12 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <motion.button
               className="md:hidden text-muted-foreground hover:text-foreground"
@@ -67,7 +83,7 @@ export const DocsLayout = ({
         </div>
       </motion.header>
 
-      <div className="flex flex-1 max-w-6xl mx-auto w-full">
+      <div className="flex flex-1 w-full">
         {/* Sidebar */}
         <aside
           className={`
@@ -79,7 +95,119 @@ export const DocsLayout = ({
           <nav className="py-6 space-y-1">
             {sections.map((s) => (
               <div key={s.id}>
-                {s.id === "commands" ? (
+                {s.id === "install" ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (installExpanded) {
+                          setInstallExpanded(false);
+                        } else {
+                          setInstallExpanded(true);
+                          setActiveSection("install");
+                          setActiveInstall("quick-install");
+                        }
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition-all flex items-center justify-between cursor-pointer ${
+                        activeSection === "install"
+                          ? "text-primary bg-secondary"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <s.icon size={16} />
+                        {s.label}
+                      </div>
+                      <motion.div
+                        animate={{ rotate: installExpanded ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ChevronDown size={14} />
+                      </motion.div>
+                    </button>
+                    <motion.div
+                      initial={false}
+                      animate={{ height: installExpanded ? "auto" : 0, opacity: installExpanded ? 1 : 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="ml-8 mt-1 space-y-1 border-l-2 border-border/50 pl-4">
+                        {installList.map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              setActiveInstall(item.id);
+                              setActiveSection("install");
+                              setSidebarOpen(false);
+                            }}
+                            className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono transition-all cursor-pointer ${
+                              activeInstall === item.id
+                                ? "text-primary bg-secondary/70"
+                                : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                ) : s.id === "agent-config" ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (agentConfigExpanded) {
+                          setAgentConfigExpanded(false);
+                        } else {
+                          setAgentConfigExpanded(true);
+                          setActiveSection("agent-config");
+                          setActiveAgentConfig("overview");
+                        }
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition-all flex items-center justify-between cursor-pointer ${
+                        activeSection === "agent-config"
+                          ? "text-primary bg-secondary"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <s.icon size={16} />
+                        {s.label}
+                      </div>
+                      <motion.div
+                        animate={{ rotate: agentConfigExpanded ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ChevronDown size={14} />
+                      </motion.div>
+                    </button>
+                    <motion.div
+                      initial={false}
+                      animate={{ height: agentConfigExpanded ? "auto" : 0, opacity: agentConfigExpanded ? 1 : 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="ml-8 mt-1 space-y-1 border-l-2 border-border/50 pl-4">
+                        {agentConfigList.map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              setActiveAgentConfig(item.id);
+                              setActiveSection("agent-config");
+                              setSidebarOpen(false);
+                            }}
+                            className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono transition-all cursor-pointer ${
+                              activeAgentConfig === item.id
+                                ? "text-primary bg-secondary/70"
+                                : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                ) : s.id === "commands" ? (
                   <>
                     <button
                       onClick={() => {
@@ -114,7 +242,7 @@ export const DocsLayout = ({
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="ml-6 mt-1 space-y-1 border-l border-border pl-3">
+                      <div className="ml-8 mt-1 space-y-1 border-l-2 border-border/50 pl-4">
                         {commandsList.map((cmd) => (
                           <button
                             key={cmd.id}
@@ -123,7 +251,7 @@ export const DocsLayout = ({
                               setActiveSection("commands");
                               setSidebarOpen(false);
                             }}
-                            className={`w-full text-left px-3 py-1.5 rounded text-xs font-mono transition-all cursor-pointer ${
+                            className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono transition-all cursor-pointer ${
                               activeCommand === cmd.id
                                 ? "text-primary bg-secondary/70"
                                 : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"

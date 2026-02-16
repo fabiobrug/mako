@@ -103,7 +103,7 @@ export default function Home() {
 
       {/* Header */}
       <header className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="px-6 h-14 flex items-center justify-between">
           <span className="font-mono font-bold text-lg tracking-tight text-foreground hover:text-primary transition-colors">
             Mako
           </span>
@@ -132,7 +132,7 @@ export default function Home() {
           </h1>
 
           {/* Install Command */}
-          <div className="max-w-3xl mx-auto mb-16">
+          <div className="max-w-4xl mx-auto mb-16">
             <div className="rounded-lg overflow-hidden shadow-lg">
               {/* Mac terminal header */}
               <div className="bg-[#2d2d2d] px-4 py-2 flex items-center gap-2 border-b border-[#1a1a1a]">
@@ -144,7 +144,7 @@ export default function Home() {
               </div>
               {/* Terminal content */}
               <div className="bg-[#1e1e1e] px-4 py-4 flex items-center justify-between gap-4">
-                <code className="font-mono text-sm text-foreground flex-1 text-left">
+                <code className="font-mono text-sm text-foreground flex-1 text-left whitespace-nowrap overflow-x-auto">
                   <span className="text-success">$ </span>{installCmd}
                 </code>
                 <button
@@ -168,7 +168,7 @@ export default function Home() {
           {/* What It Does - 3x2 Grid */}
           <div className="mb-20">
             <h2 className="font-mono font-semibold text-2xl text-foreground mb-8">What It Does</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
               <FeatureBox
                 icon={<Brain size={20} />}
                 title="AI Command Generation"
@@ -205,7 +205,7 @@ export default function Home() {
           {/* Supported LLMs Section */}
           <div className="mb-20">
             <h2 className="font-mono font-semibold text-2xl text-foreground mb-8">Supported LLMs</h2>
-            <div className="flex flex-wrap justify-center gap-3 max-w-3xl mx-auto">
+            <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
               <LLMPill name="Ollama" icon="/ollama-icon.svg" />
               <LLMPill name="OpenAI" icon="/openai-icon.svg" />
               <LLMPill name="Anthropic" icon="/claude-ai-icon.svg" />
@@ -216,7 +216,7 @@ export default function Home() {
           </div>
 
           {/* Action Boxes */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
             <ActionBox
               icon={<Github size={20} />}
               title="GitHub"
@@ -245,8 +245,8 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-border">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="px-6 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 max-w-7xl">
             <div className="flex items-center gap-6">
               <Link href="/docs" className="text-primary hover:text-primary/80 transition-colors text-sm font-medium">
                 Documentation
@@ -317,8 +317,8 @@ const ActionBox = ({ icon, title, description, href, color }: { icon: React.Reac
 };
 
 const LLMPill = ({ name, icon }: { name: string; icon: string }) => (
-  <div className="bg-code rounded-full border border-border px-5 py-2.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-default hover:shadow-lg hover:shadow-primary/10 flex items-center gap-2.5">
-    <Image src={icon} alt={`${name} icon`} width={20} height={20} className="shrink-0" />
-    <span className="font-mono font-semibold text-foreground text-sm">{name}</span>
+  <div className="bg-code rounded-full border border-border px-6 py-3 hover:scale-[1.02] transition-all duration-300 ease-out cursor-default hover:shadow-lg hover:shadow-primary/10 flex items-center gap-3">
+    <Image src={icon} alt={`${name} icon`} width={22} height={22} className="shrink-0" />
+    <span className="font-mono font-semibold text-foreground text-base">{name}</span>
   </div>
 );

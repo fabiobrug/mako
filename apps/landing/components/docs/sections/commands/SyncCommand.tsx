@@ -31,7 +31,7 @@ mako sync
 # Found 523 commands
 # New commands: 45
 # Syncing... [████████████████] 100%
-# ✓ Successfully synced 45 new commands
+# Successfully synced 45 new commands
 
 # Mako automatically detects your shell (bash/zsh)`}</CodeBlock>
         </div>
@@ -94,37 +94,36 @@ mako sync --preserve-timestamps`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">History File Not Found</h4>
-              <CodeBlock>{`mako sync
-# Error: Shell history file not found
-# Expected: ~/.bash_history or ~/.zsh_history
-# Solution: Ensure your shell writes history to disk`}</CodeBlock>
+              <CodeBlock>{`mako sync`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Shell history file not found (Expected: ~/.bash_history or ~/.zsh_history). Solution: Ensure your shell writes history to disk.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">No New Commands</h4>
-              <CodeBlock>{`mako sync
-# No new commands to sync
-# All commands are already in Mako database`}</CodeBlock>
+              <CodeBlock>{`mako sync`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                No new commands to sync. All commands are already in Mako database.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Permission Issues</h4>
-              <CodeBlock>{`mako sync
-# Error: Permission denied reading ~/.bash_history
-# Solution: Check file permissions
-chmod 600 ~/.bash_history`}</CodeBlock>
+              <CodeBlock>{`chmod 600 ~/.bash_history`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Permission denied reading ~/.bash_history. Solution: Check file permissions.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Large History File</h4>
-              <CodeBlock>{`mako sync
-# Found 50,000 commands in history
-# This may take a few minutes. Continue? [y/N]
-
-# Process in background
-mako sync --background`}</CodeBlock>
+              <CodeBlock>{`mako sync --background`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Found 50,000 commands in history. This may take a few minutes. Process in background to continue working.
+              </p>
             </div>
           </div>
         </div>

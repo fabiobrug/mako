@@ -87,42 +87,46 @@ mako ask "backup database" --alternatives 3`}</CodeBlock>
 
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases & Limitations</h3>
-          <div className="space-y-4">
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">WARNING: Ambiguous Requests</h4>
+          <div className="space-y-3">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Ambiguous Requests</h4>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 If your request is ambiguous, Mako will ask for clarification:
               </p>
-              <CodeBlock>{`mako ask "delete files"
-# Output: Could you be more specific? Which files should I delete?`}</CodeBlock>
+              <CodeBlock>{`mako ask "delete files"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Output: Could you be more specific? Which files should I delete?
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">ERROR: Unsupported Operations</h4>
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Unsupported Operations</h4>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 Some operations require manual intervention:
               </p>
-              <CodeBlock>{`mako ask "edit file and change line 5"
-# Error: Interactive editing requires manual intervention
-# Suggestion: Use: nano filename.txt`}</CodeBlock>
+              <CodeBlock>{`mako ask "edit file and change line 5"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Interactive editing requires manual intervention. Suggestion: Use <code className="text-primary text-xs">nano filename.txt</code>
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">SECURITY: Dangerous Commands</h4>
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Dangerous Commands</h4>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 Mako will warn about potentially destructive operations:
               </p>
-              <CodeBlock>{`mako ask "delete everything in root"
-# WARNING: This command is destructive and affects system files
-# Command: rm -rf /
-# Do you want to proceed? [y/N]`}</CodeBlock>
+              <CodeBlock>{`mako ask "delete everything in root"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                WARNING: This command is destructive and affects system files. Do you want to proceed? [y/N]
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">NETWORK: No Internet Connection</h4>
-              <CodeBlock>{`mako ask "find large files"
-# Error: Cannot connect to AI service
-# Check your internet connection or API key`}</CodeBlock>
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">No Internet Connection</h4>
+              <CodeBlock>{`mako ask "find large files"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Cannot connect to AI service. Check your internet connection or API key.
+              </p>
             </div>
           </div>
         </div>
@@ -130,22 +134,28 @@ mako ask "backup database" --alternatives 3`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Common Failure Cases</h3>
           <div className="space-y-3">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-              <p className="font-mono text-sm text-foreground mb-2">Invalid API Key</p>
-              <CodeBlock>{`Error: Authentication failed
-Solution: Set your API key via: mako config set api_key your-key-here`}</CodeBlock>
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <p className="font-mono text-sm font-semibold text-foreground mb-2">Invalid API Key</p>
+              <CodeBlock>{`Error: Authentication failed`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Solution: Set your API key via <code className="text-primary text-xs">mako config set api_key your-key-here</code>
+              </p>
             </div>
 
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-              <p className="font-mono text-sm text-foreground mb-2">Rate Limit Exceeded</p>
-              <CodeBlock>{`Error: API rate limit exceeded
-Solution: Wait a few seconds and try again`}</CodeBlock>
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <p className="font-mono text-sm font-semibold text-foreground mb-2">Rate Limit Exceeded</p>
+              <CodeBlock>{`Error: API rate limit exceeded`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Solution: Wait a few seconds and try again
+              </p>
             </div>
 
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-              <p className="font-mono text-sm text-foreground mb-2">Empty Prompt</p>
-              <CodeBlock>{`mako ask ""
-Error: Please provide a description of what you want to do`}</CodeBlock>
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <p className="font-mono text-sm font-semibold text-foreground mb-2">Empty Prompt</p>
+              <CodeBlock>{`mako ask ""`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Please provide a description of what you want to do
+              </p>
             </div>
           </div>
         </div>

@@ -54,7 +54,7 @@ mako update install
 # 3. Installing v1.5.0...
 # 4. Verifying installation...
 # 
-# ✓ Successfully updated to v1.5.0
+# Successfully updated to v1.5.0
 # Run 'mako --version' to verify
 
 # Skip confirmation prompt
@@ -93,37 +93,36 @@ mako config get last_update_check`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">No Internet Connection</h4>
-              <CodeBlock>{`mako update check
-# Error: Cannot connect to update server
-# Check your internet connection and try again`}</CodeBlock>
+              <CodeBlock>{`mako update check`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Cannot connect to update server. Check your internet connection and try again.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Permission Denied</h4>
-              <CodeBlock>{`mako update install
-# Error: Permission denied
-# Try: sudo mako update install`}</CodeBlock>
+              <CodeBlock>{`mako update install`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Permission denied. Try: <code className="text-primary text-xs">sudo mako update install</code>
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Update Failed</h4>
-              <CodeBlock>{`# If update fails, restore from backup
-Error: Update failed at step 3
-Restoring from backup...
-✓ Restored to version v1.4.2
-
-# Manual update via install script
-curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-2">
+                If update fails, it will restore from backup automatically. Alternatively, use the install script:
+              </p>
+              <CodeBlock>{`curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash`}</CodeBlock>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Downgrade Not Allowed</h4>
-              <CodeBlock>{`mako update install v1.3.0
-# Error: Downgrading is not supported
-# Current version: v1.4.2
-# Use manual installation to downgrade`}</CodeBlock>
+              <CodeBlock>{`mako update install v1.3.0`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Downgrading is not supported (Current version: v1.4.2). Use manual installation to downgrade.
+              </p>
             </div>
           </div>
         </div>

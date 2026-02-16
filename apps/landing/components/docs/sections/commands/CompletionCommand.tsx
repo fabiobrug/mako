@@ -119,36 +119,34 @@ llm_provider  llm_model  api_key  max_history`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Unsupported Shell</h4>
-              <CodeBlock>{`mako completion powershell
-# Error: Unsupported shell: powershell
-# Supported shells: bash, zsh, fish`}</CodeBlock>
+              <CodeBlock>{`mako completion powershell`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Unsupported shell: powershell. Supported shells: bash, zsh, fish
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Completion Not Working</h4>
-              <CodeBlock>{`# Verify completion is sourced
-$ which mako
-/usr/local/bin/mako
-
-# Check if completion file exists
-$ ls -la ~/.mako-completion.bash
-
-# Regenerate and reload
-mako completion bash > ~/.mako-completion.bash
-source ~/.bashrc`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-2">
+                Verify completion is sourced. Regenerate and reload:
+              </p>
+              <CodeBlock>{`mako completion bash > ~/.mako-completion.bash`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Then: <code className="text-primary text-xs">source ~/.bashrc</code>
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Conflicting Completions</h4>
-              <CodeBlock>{`# If you have multiple completion files
-# Remove old ones and keep only one
-
-# For bash
-rm ~/.mako-completion.bash.old
-mako completion bash > ~/.mako-completion.bash
-source ~/.bashrc`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-2">
+                If you have multiple completion files, remove old ones:
+              </p>
+              <CodeBlock>{`rm ~/.mako-completion.bash.old`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Then regenerate: <code className="text-primary text-xs">mako completion bash {'>'}  ~/.mako-completion.bash && source ~/.bashrc</code>
+              </p>
             </div>
           </div>
         </div>

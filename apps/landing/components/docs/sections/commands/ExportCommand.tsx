@@ -89,40 +89,36 @@ mako export --last 10 | jq '.commands | length'
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Empty History</h4>
-              <CodeBlock>{`mako export > history.json
-# Output: No commands to export
-# Exit code: 1`}</CodeBlock>
+              <CodeBlock>{`mako export > history.json`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Output: No commands to export (Exit code: 1)
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Permission Denied</h4>
-              <CodeBlock>{`mako export > /root/history.json
-# bash: /root/history.json: Permission denied
-# Solution: Export to a directory you have write access to`}</CodeBlock>
+              <CodeBlock>{`mako export > /root/history.json`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                bash: /root/history.json: Permission denied. Solution: Export to a directory you have write access to.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Large Export</h4>
-              <CodeBlock>{`# Exporting 50,000 commands
-mako export > large-history.json
-# This may take a few seconds...
-# ✓ Exported 50,000 commands (15.2 MB)
-
-# Use filters to reduce size
-mako export --last 1000 > recent.json`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-2">
+                Exporting 50,000 commands may take a few seconds (15.2 MB). Use filters to reduce size:
+              </p>
+              <CodeBlock>{`mako export --last 1000 > recent.json`}</CodeBlock>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
-              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Corrupt Export</h4>
-              <CodeBlock>{`# Verify JSON is valid
-mako export > history.json
-jq . history.json > /dev/null && echo "Valid JSON" || echo "Invalid JSON"
-
-# If corrupted, re-export
-rm history.json
-mako export > history.json`}</CodeBlock>
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
+              <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Verify Export</h4>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-2">
+                Verify JSON is valid:
+              </p>
+              <CodeBlock>{`jq . history.json > /dev/null && echo "Valid JSON" || echo "Invalid JSON"`}</CodeBlock>
             </div>
           </div>
         </div>

@@ -114,31 +114,36 @@ mako alias deploy "npm run build && npm run deploy"`}</CodeBlock>
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Alias Already Exists</h4>
-              <CodeBlock>{`mako alias save ll "ls -la"
-# Warning: Alias 'll' already exists
-# Use --force to overwrite: mako alias save ll "ls -la" --force`}</CodeBlock>
+              <CodeBlock>{`mako alias save ll "ls -la"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Warning: Alias 'll' already exists. Use --force to overwrite: <code className="text-primary text-xs">mako alias save ll "ls -la" --force</code>
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Alias Not Found</h4>
-              <CodeBlock>{`mako alias run nonexistent
-# Error: Alias 'nonexistent' not found
-# Use 'mako alias list' to see available aliases`}</CodeBlock>
+              <CodeBlock>{`mako alias run nonexistent`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Alias 'nonexistent' not found. Use <code className="text-primary text-xs">mako alias list</code> to see available aliases.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Invalid Alias Name</h4>
-              <CodeBlock>{`mako alias save "my alias!" "echo hello"
-# Error: Alias name contains invalid characters
-# Use only letters, numbers, hyphens, and underscores`}</CodeBlock>
+              <CodeBlock>{`mako alias save "my alias!" "echo hello"`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Alias name contains invalid characters. Use only letters, numbers, hyphens, and underscores.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-red-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Empty Command</h4>
-              <CodeBlock>{`mako alias save test ""
-# Error: Command cannot be empty`}</CodeBlock>
+              <CodeBlock>{`mako alias save test ""`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Error: Command cannot be empty
+              </p>
             </div>
           </div>
         </div>

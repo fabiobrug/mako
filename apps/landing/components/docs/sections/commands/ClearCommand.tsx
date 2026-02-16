@@ -39,23 +39,47 @@ mako clear
 
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">What Gets Cleared</h3>
-          <div className="bg-code border border-border rounded-lg p-4 mb-4">
-            <h4 className="font-mono text-sm font-semibold text-foreground mb-3">✓ Cleared:</h4>
-            <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1">
-              <li>AI conversation context</li>
-              <li>Previous prompts and responses</li>
-              <li>Multi-turn conversation state</li>
-              <li>Temporary context from recent commands</li>
+          <div className="border-l-2 border-success/50 pl-4 py-3 mb-4 hover:bg-muted-foreground/5 transition-colors rounded-r">
+            <h4 className="font-mono text-sm font-semibold text-foreground mb-3">Cleared:</h4>
+            <ul className="space-y-2 text-muted-foreground text-sm">
+              <li className="flex items-start gap-2">
+                <span className="text-success mt-0.5">•</span>
+                <span>AI conversation context</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-success mt-0.5">•</span>
+                <span>Previous prompts and responses</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-success mt-0.5">•</span>
+                <span>Multi-turn conversation state</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-success mt-0.5">•</span>
+                <span>Temporary context from recent commands</span>
+              </li>
             </ul>
           </div>
 
-          <div className="bg-code border border-border rounded-lg p-4">
-            <h4 className="font-mono text-sm font-semibold text-foreground mb-3">✗ NOT Cleared:</h4>
-            <ul className="list-disc list-inside text-muted-foreground text-sm space-y-1">
-              <li>Command history database</li>
-              <li>Configuration settings</li>
-              <li>Saved aliases</li>
-              <li>Statistics and analytics</li>
+          <div className="border-l-2 border-muted-foreground/30 pl-4 py-3 hover:bg-muted-foreground/5 transition-colors rounded-r">
+            <h4 className="font-mono text-sm font-semibold text-foreground mb-3">NOT Cleared:</h4>
+            <ul className="space-y-2 text-muted-foreground text-sm">
+              <li className="flex items-start gap-2">
+                <span className="text-muted-foreground mt-0.5">•</span>
+                <span>Command history database</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-muted-foreground mt-0.5">•</span>
+                <span>Configuration settings</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-muted-foreground mt-0.5">•</span>
+                <span>Saved aliases</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-muted-foreground mt-0.5">•</span>
+                <span>Statistics and analytics</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -74,7 +98,7 @@ mako clear --verbose
 # Output:
 # Cleared 15 messages from conversation
 # Context window reset
-# ✓ Ready for new conversation`}</CodeBlock>
+# Ready for new conversation`}</CodeBlock>
         </div>
 
         <div>
@@ -90,20 +114,20 @@ mako clear --verbose
         <div>
           <h3 className="font-mono text-base font-semibold text-foreground mb-3">Edge Cases</h3>
           <div className="space-y-3">
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-blue-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Nothing to Clear</h4>
-              <CodeBlock>{`mako clear
-# Conversation history is already empty
-# Nothing to clear`}</CodeBlock>
+              <CodeBlock>{`mako clear`}</CodeBlock>
+              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+                Conversation history is already empty. Nothing to clear.
+              </p>
             </div>
 
-            <div className="bg-code border border-border rounded-lg p-4">
+            <div className="border-l-2 border-yellow-500/50 pl-4 py-2 hover:bg-muted-foreground/5 transition-colors rounded-r">
               <h4 className="font-mono text-sm font-semibold text-foreground mb-2">Accidental Clear</h4>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 Conversation context cannot be recovered after clearing. However, your command history remains intact and can be searched.
               </p>
-              <CodeBlock>{`# View recent commands even after clearing
-mako history --last 20`}</CodeBlock>
+              <CodeBlock>{`mako history --last 20`}</CodeBlock>
             </div>
           </div>
         </div>

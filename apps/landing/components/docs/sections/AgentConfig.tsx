@@ -118,10 +118,10 @@ mako`}</CodeBlock>
       <strong className="text-foreground">Benefits of Ollama:</strong>
     </p>
     <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6 leading-relaxed">
-      <li>✅ Completely free</li>
-      <li>✅ Works offline</li>
-      <li>✅ Privacy - data never leaves your machine</li>
-      <li>✅ No API rate limits</li>
+      <li>Completely free</li>
+      <li>Works offline</li>
+      <li>Privacy - data never leaves your machine</li>
+      <li>No API rate limits</li>
     </ul>
 
     <h2 className="font-mono text-2xl font-semibold text-foreground mt-8 mb-4">Configuration Methods</h2>
