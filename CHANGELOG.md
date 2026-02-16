@@ -2,6 +2,34 @@
 
 All notable changes to Mako will be documented in this file.
 
+## [1.3.7] - 2026-02-16
+
+### Fixed - Setup Command Enhancement 🔧
+
+**Bug Fix**
+- **Fixed `mako setup` command in shell**: Previously returned "Unknown mako command: setup" when called from within Mako
+- **Added command handler**: Implemented `handleSetup()` function to provide helpful guidance
+- **User-friendly instructions**: When called inside Mako, clearly explains how to exit and run the wizard
+- **Updated help text**: Added `mako setup` to in-shell help menu with note "(exit Mako first)"
+
+**Implementation**
+- Added `case "setup"` to command interceptor in `internal/shell/commands.go`
+- Created `handleSetup()` function in `internal/shell/text.go` with detailed instructions
+- Updated help text to include the setup command
+
+**User Experience**
+- **Outside Mako**: `mako setup` runs the interactive wizard (unchanged)
+- **Inside Mako**: `mako setup` displays clear instructions:
+  - How to exit Mako (Ctrl+D or type exit)
+  - How to run the wizard from outside
+  - What the wizard does
+  - Alternative quick provider management commands
+
+**Impact**
+- Eliminates confusion when users try to run `mako setup` from inside the shell
+- Provides helpful guidance instead of an error message
+- Maintains wizard functionality while working within PTY limitations
+
 ## [1.3.6] - 2026-02-16
 
 ### Added - Interactive Onboarding & Provider Management ✨

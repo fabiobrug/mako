@@ -62,7 +62,7 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 			}
 			return true, getHelpText(), nil
 		case "v", "version":
-			return true, fmt.Sprintf("v1.3.6\n"), nil
+			return true, fmt.Sprintf("v1.3.7\n"), nil
 		case "draw":
 			return true, getSharkArt(), nil
 		case "clear":
@@ -91,6 +91,9 @@ func InterceptCommand(line string, db *database.DB) (bool, string, error) {
 			return true, output, err
 		case "uninstall":
 			output, err := handleUninstall()
+			return true, output, err
+		case "setup":
+			output, err := handleSetup()
 			return true, output, err
 		default:
 			return true, fmt.Sprintf("Unknown mako command: %s\n", parts[1]), nil

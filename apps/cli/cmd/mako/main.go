@@ -35,7 +35,7 @@ func main() {
 		lightBlue := "\033[38;2;93;173;226m"
 		dimBlue := "\033[38;2;120;150;180m"
 		reset := "\033[0m"
-		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.3.6 %s%s\n", lightBlue, cyan, reset)
+		fmt.Printf("\n%s▸ Mako - AI-Native Shell Orchestrator - v1.3.7 %s%s\n", lightBlue, cyan, reset)
 			fmt.Printf("%s", dimBlue)
 			return
 		case "setup":

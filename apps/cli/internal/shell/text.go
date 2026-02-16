@@ -47,6 +47,7 @@ func getHelpText() string {
 %s│%s  
 %s│%s  %smako clear%s                       Clear conversation history
 %s│%s  %smako completion <bash|zsh|fish>%s  Generate shell completion script
+%s│%s  %smako setup%s                       Run setup wizard (exit Mako first)
 %s│%s  %smako help%s                        Show this help
 %s│%s  %smako version%s                     Show Mako version
 %s│%s 
@@ -86,6 +87,7 @@ func getHelpText() string {
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset,
+		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
 		lightBlue, reset, cyan, reset,
@@ -389,6 +391,32 @@ func handleUninstall() (string, error) {
 	output += "  rm /etc/bash_completion.d/mako\r\n"
 	output += "  rm ~/.zsh/completions/_mako\r\n"
 	output += "  rm ~/.config/fish/completions/mako.fish\r\n\r\n"
+
+	return output, nil
+}
+
+// handleSetup provides instructions for running the setup wizard
+func handleSetup() (string, error) {
+	cyan := "\033[38;2;0;209;255m"
+	lightBlue := "\033[38;2;93;173;226m"
+	dimBlue := "\033[38;2;120;150;180m"
+	yellow := "\033[38;2;241;196;15m"
+	reset := "\033[0m"
+
+	output := fmt.Sprintf("\r\n%sSetup Wizard%s\r\n", cyan, reset)
+	output += fmt.Sprintf("%s━━━━━━━━━━━━━━━━━━━━━━%s\r\n\r\n", dimBlue, reset)
+	output += fmt.Sprintf("%sThe interactive setup wizard requires full terminal control.%s\r\n\r\n", dimBlue, reset)
+	output += fmt.Sprintf("%sTo run the setup wizard:%s\r\n\r\n", lightBlue, reset)
+	output += fmt.Sprintf("  1. Exit Mako: %sCtrl+D%s or type %sexit%s\r\n", yellow, reset, yellow, reset)
+	output += fmt.Sprintf("  2. Run: %smako setup%s\r\n\r\n", cyan, reset)
+	output += fmt.Sprintf("%sThe wizard will help you:%s\r\n", dimBlue, reset)
+	output += "  • Configure multiple AI providers\r\n"
+	output += "  • Set up API keys securely\r\n"
+	output += "  • Choose your default provider\r\n"
+	output += "  • Adjust safety and update settings\r\n\r\n"
+	output += fmt.Sprintf("%sQuick provider management:%s\r\n", dimBlue, reset)
+	output += fmt.Sprintf("  • %smako config providers%s     - List configured providers\r\n", cyan, reset)
+	output += fmt.Sprintf("  • %smako config switch <name>%s - Switch active provider\r\n\r\n", cyan, reset)
 
 	return output, nil
 }

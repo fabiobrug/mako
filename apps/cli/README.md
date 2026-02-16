@@ -55,7 +55,16 @@ mako history --interactive
 mako health
 ```
 
-## What's New in v1.3.6
+## What's New in v1.3.7
+
+**🔧 Setup Command Enhancement**
+
+- **Fixed `mako setup` inside shell**: Command now works from within Mako shell with helpful instructions
+- **User-friendly guidance**: When called inside Mako, provides clear steps to exit and run the wizard
+- **Updated help text**: Added `mako setup` to in-shell help menu
+- **Seamless experience**: Works both inside and outside Mako shell appropriately
+
+**Previous Release - v1.3.6**
 
 **✨ Interactive Onboarding & Provider Management**
 
