@@ -377,7 +377,7 @@ func saveAPIKeys(apiKeys map[string]string) error {
 		"anthropic":  "ANTHROPIC_API_KEY",
 		"openai":     "OPENAI_API_KEY",
 		"deepseek":   "DEEPSEEK_API_KEY",
-		"openrouter": "OPENROUTER_API_KEY",curl -sSL https://raw.githubusercontent.com/fabiobrug/mako/dev/scripts/install.sh | bash
+		"openrouter": "OPENROUTER_API_KEY",
 	}
 	
 	for provider, key := range apiKeys {
